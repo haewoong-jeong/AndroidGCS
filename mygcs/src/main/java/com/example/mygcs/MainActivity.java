@@ -111,6 +111,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
+    //alt
+
+
     @Override
     public void onDroneServiceInterrupted(String errorMsg) {
 
