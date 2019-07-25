@@ -2,6 +2,7 @@ package com.example.mygcs;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
@@ -16,7 +17,15 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.naver.maps.geometry.LatLng;
+import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.MapFragment;
+import com.naver.maps.map.NaverMap;
+import com.naver.maps.map.OnMapReadyCallback;
+import com.naver.maps.map.overlay.InfoWindow;
+import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.overlay.PolylineOverlay;
+import com.naver.maps.map.util.MarkerIcons;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.VehicleApi;
@@ -29,7 +38,9 @@ import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
+import com.o3dr.services.android.lib.drone.mission.item.command.YawCondition;
 import com.o3dr.services.android.lib.drone.property.Altitude;
+import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
 import com.o3dr.services.android.lib.drone.property.Gps;
 import com.o3dr.services.android.lib.drone.property.Home;
@@ -40,9 +51,10 @@ import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 
+import java.util.Arrays;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements DroneListener, TowerListener, LinkListener {
+public class MainActivity extends AppCompatActivity implements DroneListener, TowerListener, LinkListener, OnMapReadyCallback {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -51,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private int droneType = Type.TYPE_UNKNOWN;
     private ControlTower controlTower;
     private final Handler handler = new Handler();
+    private NaverMap nMap;
 
     private Spinner modeSelector;
 
@@ -86,6 +99,25 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             mNaverMapFragment = MapFragment.newInstance();
             fm.beginTransaction().add(R.id.map, mNaverMapFragment).commit();
         }
+        mNaverMapFragment.getMapAsync(this);
+    }
+
+    public void onMapReady(@NonNull NaverMap naverMap){
+
+        nMap = naverMap;
+
+
+        naverMap.setMapType(NaverMap.MapType.Hybrid);
+        Gps test = this.drone.getAttribute(AttributeType.GPS);
+
+       // LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
+        //Log.d("test","좌표확인 : " + test.getPosition());
+
+       // CameraPosition cameraPosition = new CameraPosition(knu, 9);
+       // naverMap.setCameraPosition(cameraPosition);
+      // Marker marker = new Marker();
+       // marker.setPosition(knu);
+       // marker.setMap(naverMap);
     }
 
     @Override
@@ -129,10 +161,16 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
                 break;
 
+
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
                 break;
-
+            case AttributeEvent.GPS_COUNT:
+                updateSatellite();;
+                break;
+            case AttributeEvent.ATTITUDE_UPDATED:
+                updateYaw();
+                break;
             case AttributeEvent.STATE_VEHICLE_MODE:
                 updateVehicleMode();
                 break;
@@ -142,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             case AttributeEvent.SPEED_UPDATED:
                 updateSpeed();
                 break;
+
             case AttributeEvent.HOME_UPDATED:
                 updateDistanceFromHome();
                 break;
@@ -150,6 +189,36 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 // Log.i("DRONE_EVENT", event); //Uncomment to see events from the drone
                 break;
         }
+    }
+
+    protected  void maker()
+    {
+
+
+
+    }
+
+    protected void updateSatellite()
+    {
+        TextView SatelliteTextView = (TextView) findViewById(R.id.satelliteValueTextView);
+        Gps satellite = this.drone.getAttribute(AttributeType.GPS);
+        Log.d("test","좌표확인 : " + satellite.getPosition().getLatitude());
+        SatelliteTextView.setText(String.format("%d", satellite.getSatellitesCount()));
+    }
+    //yaw값
+    protected void updateYaw()
+    {
+        TextView YawTextView = (TextView) findViewById(R.id.YawValueTextView);
+        Attitude Yaw = this.drone.getAttribute(AttributeType.ATTITUDE);
+        YawTextView.setText(String.format("%.1f", Yaw.getYaw()) + "Deg");
+    }
+    // 전압
+    protected void updateVoltage()
+    {
+        TextView VoltageTextView = (TextView) findViewById(R.id.VoltageValueTextView);
+        Battery BatteyVoltage = this.drone.getAttribute(AttributeType.BATTERY);
+        //Log.d("test","배터리확인 : " + BatteyVoltage.getBatteryVoltage());
+        VoltageTextView.setText(String.format("%.1f", BatteyVoltage.getBatteryVoltage())+"V");
     }
 
     public void onFlightModeSelected(View view) {
@@ -235,14 +304,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         distanceTextView.setText(String.format("%3.1f", distanceFromHome) + "m");
     }
 
-    // 전압
-    protected void updateVoltage()
-    {
-        TextView VoltageTextView = (TextView) findViewById(R.id.VoltageValueTextView);
-        Battery BatteyVoltage = this.drone.getAttribute(AttributeType.BATTERY);
-        //Log.d("test","배터리확인 : " + BatteyVoltage.getBatteryVoltage());
-        VoltageTextView.setText(String.format("%.1f", BatteyVoltage.getBatteryVoltage()+"V"));
-    }0
+
 
     protected void updateConnectedButton(Boolean isConnected) {
         Button connectButton = (Button) findViewById(R.id.btnConnect);

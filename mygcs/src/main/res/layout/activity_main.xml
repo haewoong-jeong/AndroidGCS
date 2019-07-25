@@ -21,7 +21,7 @@
 
         <TextView
             android:id="@+id/VoltageLabelTextView"
-            android:layout_width="50dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_column="0"
             android:layout_alignTop="@+id/vehTelemRow2"
@@ -29,11 +29,12 @@
             android:paddingBottom="5dp"
             android:text="전압:"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp" />
 
         <TextView
             android:id="@+id/VoltageValueTextView"
-            android:layout_width="48dp"
+            android:layout_width="42dp"
             android:layout_height="wrap_content"
             android:layout_column="1"
             android:layout_alignTop="@+id/vehTelemRow2"
@@ -42,7 +43,8 @@
             android:paddingBottom="5dp"
             android:text="0V"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp" />
 
         <TextView
             android:id="@+id/vehicleModeLabelTextView"
@@ -54,12 +56,13 @@
             android:paddingBottom="5dp"
             android:text="비행모드:"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
 
         <Spinner
             android:id="@+id/modeSelect"
-            android:layout_width="95dp"
+            android:layout_width="125dp"
             android:layout_height="match_parent"
             android:layout_column="1"
             android:layout_below="@+id/connectionTypeLabel"
@@ -77,7 +80,8 @@
             android:paddingBottom="5dp"
             android:text="고도:"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
         <TextView
             android:id="@+id/altitudeValueTextView"
@@ -89,7 +93,8 @@
             android:paddingBottom="5dp"
             android:text="0m"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
         <TextView
             android:id="@+id/speedLabelTextView"
@@ -100,11 +105,12 @@
             android:paddingBottom="5dp"
             android:text="속도:"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
         <TextView
             android:id="@+id/speedValueTextView"
-            android:layout_width="75dp"
+            android:layout_width="65dp"
             android:layout_height="wrap_content"
             android:layout_column="1"
             android:layout_gravity="left"
@@ -112,7 +118,8 @@
             android:paddingBottom="5dp"
             android:text="0m/s"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp" />
 
         <TextView
             android:id="@+id/YawLabelTextView"
@@ -123,11 +130,12 @@
             android:paddingBottom="5dp"
             android:text="Yaw:"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
         <TextView
             android:id="@+id/YawValueTextView"
-            android:layout_width="63dp"
+            android:layout_width="86dp"
             android:layout_height="wrap_content"
             android:layout_column="1"
             android:layout_gravity="left"
@@ -135,7 +143,8 @@
             android:paddingBottom="5dp"
             android:text="0deg"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp" />
 
         <TextView
             android:id="@+id/satelliteLabelTextView"
@@ -146,7 +155,8 @@
             android:paddingBottom="5dp"
             android:text="위성:"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
         <TextView
             android:id="@+id/satelliteValueTextView"
@@ -158,7 +168,8 @@
             android:paddingBottom="5dp"
             android:text="0"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
         <TextView
             android:id="@+id/distanceLabelTextView"
@@ -169,7 +180,8 @@
             android:paddingBottom="5dp"
             android:text="거리:"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
         <TextView
             android:id="@+id/distanceValueTextView"
@@ -182,7 +194,8 @@
             android:paddingBottom="5dp"
             android:text="0m"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#FFFFFFFF" />
+            android:textColor="#FFFFFFFF"
+            android:textSize="15dp"/>
 
 
 
