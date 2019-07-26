@@ -64,10 +64,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private ControlTower controlTower;
     private final Handler handler = new Handler();
     private NaverMap nMap;
+    boolean check = true;
 
     private Spinner modeSelector;
 
-
+    private Button testButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,15 +101,58 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             fm.beginTransaction().add(R.id.map, mNaverMapFragment).commit();
         }
         mNaverMapFragment.getMapAsync(this);
+
+        Button mapButton = findViewById(R.id.mapbutton);
+        Button Basicbutton = (Button) findViewById(R.id.basicMapbutton);
+        Button Terrainbutton = (Button) findViewById(R.id.mapTerrainbutton);
+        Button Satellitebutton = (Button) findViewById(R.id.mapSatellitebutton);
+
+        mapButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MapStateButton();
+            }
+        });
+        Basicbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MapbasicButton();
+            }
+        });
+        Terrainbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MapTerrainButton();
+            }
+        });
+        Satellitebutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MapSatelliteButton();
+            }
+        });
+
     }
+
+    public void testMethod() {
+        nMap.setMapType(NaverMap.MapType.Satellite);
+    }
+
+
+
+
+
+
 
     public void onMapReady(@NonNull NaverMap naverMap){
 
+        naverMap.setMapType(NaverMap.MapType.Basic);
+        Gps test = this.drone.getAttribute(AttributeType.GPS);
         nMap = naverMap;
 
 
-        naverMap.setMapType(NaverMap.MapType.Hybrid);
-        Gps test = this.drone.getAttribute(AttributeType.GPS);
+
+
 
        // LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
         //Log.d("test","좌표확인 : " + test.getPosition());
@@ -160,8 +204,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     updateVehicleModesForType(this.droneType);
                 }
                 break;
-
-
+            case AttributeEvent.GPS_POSITION:
+                maker();
+                break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
                 break;
@@ -185,6 +230,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 updateDistanceFromHome();
                 break;
 
+
             default:
                 // Log.i("DRONE_EVENT", event); //Uncomment to see events from the drone
                 break;
@@ -193,9 +239,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     protected  void maker()
     {
-
-
-
+        Gps test = this.drone.getAttribute(AttributeType.GPS);
+        LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
+        Marker marker = new Marker();
+        marker.setPosition(knu);
+        marker.setMap(nMap);
     }
 
     protected void updateSatellite()
@@ -322,6 +370,47 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             ConnectionParameter params = ConnectionParameter.newUdpConnection(null);
             this.drone.connect(params);
         }
+    }
+
+    protected void MapStateButton()
+    {
+        Button Basicbutton = (Button) findViewById(R.id.basicMapbutton);
+        Button Terrainbutton = (Button) findViewById(R.id.mapTerrainbutton);
+        Button Satellitebutton = (Button) findViewById(R.id.mapSatellitebutton);
+
+        if(check == true) {
+            Basicbutton.setVisibility(View.INVISIBLE);
+            Terrainbutton.setVisibility(View.INVISIBLE);
+            Satellitebutton.setVisibility(View.INVISIBLE);
+            check = false;
+        }
+        else if(check == false) {
+            Basicbutton.setVisibility(View.VISIBLE);
+            Terrainbutton.setVisibility(View.VISIBLE);
+            Satellitebutton.setVisibility(View.VISIBLE);
+            check = true;
+        }
+    }
+    protected void MapbasicButton()
+    {
+        Button statebutton = (Button) findViewById(R.id.mapbutton);
+        Button Basicbutton = (Button) findViewById(R.id.basicMapbutton);
+        nMap.setMapType(NaverMap.MapType.Basic);
+        statebutton.setText("일반지도");
+    }
+    protected void MapTerrainButton()
+    {
+        Button statebutton = (Button) findViewById(R.id.mapbutton);
+        Button Terrainbutton = (Button) findViewById(R.id.mapTerrainbutton);
+        nMap.setMapType(NaverMap.MapType.Terrain);
+        statebutton.setText("지형도");
+    }
+    protected void MapSatelliteButton()
+    {
+        Button statebutton = (Button) findViewById(R.id.mapbutton);
+        Button Satellitebutton = (Button) findViewById(R.id.mapSatellitebutton);
+        nMap.setMapType(NaverMap.MapType.Satellite);
+        statebutton.setText("지형도");
     }
 
 

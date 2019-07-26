@@ -32,6 +32,7 @@
             android:textColor="#FFFFFFFF"
             android:textSize="15dp" />
 
+
         <TextView
             android:id="@+id/VoltageValueTextView"
             android:layout_width="42dp"
@@ -57,8 +58,7 @@
             android:text="비행모드:"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textColor="#FFFFFFFF"
-            android:textSize="15dp"/>
-
+            android:textSize="15dp" />
 
         <Spinner
             android:id="@+id/modeSelect"
@@ -221,7 +221,80 @@
         android:layout_alignBottom="@+id/map"
         android:layout_marginStart="21dp"
         android:layout_marginBottom="15dp"
-        android:background="#FFFFD700"
+        android:background="#AAFFD700"
         android:text="ARM" />
+
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginEnd="288dp"
+        android:layout_marginBottom="15dp"
+        android:text="맵 잠금" />
+
+    <Button
+        android:id="@+id/mapbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginEnd="195dp"
+        android:layout_marginBottom="15dp"
+        android:text="일반지도" />
+
+    <Button
+        android:id="@+id/button5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginEnd="103dp"
+        android:layout_marginBottom="15dp"
+        android:text="지적도off" />
+
+    <Button
+        android:id="@+id/button6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="15dp"
+        android:text="CLEAR" />
+
+    <Button
+        android:id="@+id/basicMapbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginEnd="194dp"
+        android:layout_marginBottom="58dp"
+        android:text="일반지도"
+        android:visibility="visible"/>
+
+    <Button
+        android:id="@+id/mapTerrainbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginEnd="193dp"
+        android:layout_marginBottom="101dp"
+        android:text="지형도"
+        android:visibility="visible"/>
+
+    <Button
+        android:id="@+id/mapSatellitebutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginEnd="193dp"
+        android:layout_marginBottom="143dp"
+        android:text="위성지도"
+        android:visibility="visible"/>
 
 </RelativeLayout>
