@@ -391,9 +391,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
-    // UI updating
-    // ==========================================================
-
     protected void updateConnectedButton(Boolean isConnected) {
         Button connectButton = (Button) findViewById(R.id.btnConnect);
         if (isConnected) {

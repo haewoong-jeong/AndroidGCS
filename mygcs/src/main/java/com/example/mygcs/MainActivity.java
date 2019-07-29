@@ -2,7 +2,6 @@ package com.example.mygcs;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
-import android.graphics.Color;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
@@ -18,16 +17,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.naver.maps.geometry.LatLng;
-import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
-import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
-import com.naver.maps.map.overlay.PolylineOverlay;
-import com.naver.maps.map.util.MarkerIcons;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
+import com.o3dr.android.client.apis.ControlApi;
 import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.LinkListener;
@@ -37,8 +33,6 @@ import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
-import com.o3dr.services.android.lib.drone.connection.ConnectionType;
-import com.o3dr.services.android.lib.drone.mission.item.command.YawCondition;
 import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
@@ -50,8 +44,8 @@ import com.o3dr.services.android.lib.drone.property.Type;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
+import com.o3dr.services.android.lib.model.SimpleCommandListener;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements DroneListener, TowerListener, LinkListener, OnMapReadyCallback {
@@ -64,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private ControlTower controlTower;
     private final Handler handler = new Handler();
     private NaverMap nMap;
+    private Marker drone_marker = new Marker();
     boolean check = true;
 
     private Spinner modeSelector;
@@ -188,13 +183,17 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             case AttributeEvent.STATE_CONNECTED:
                 alertUser("Drone Connected");
                 updateConnectedButton(this.drone.isConnected());
-                //updateArmButton();
+                updateArmButton();
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
                 alertUser("Drone Disconnected");
                 updateConnectedButton(this.drone.isConnected());
-                //updateArmButton();
+                updateArmButton();
+                break;
+            case AttributeEvent.STATE_UPDATED:
+            case AttributeEvent.STATE_ARMING:
+                updateArmButton();
                 break;
 
             case AttributeEvent.TYPE_UPDATED:
@@ -241,9 +240,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     {
         Gps test = this.drone.getAttribute(AttributeType.GPS);
         LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
-        Marker marker = new Marker();
-        marker.setPosition(knu);
-        marker.setMap(nMap);
+        //Marker marker = new Marker();
+        drone_marker.setPosition(knu);
+        drone_marker.setMap(nMap);
     }
 
     protected void updateSatellite()
@@ -267,6 +266,60 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Battery BatteyVoltage = this.drone.getAttribute(AttributeType.BATTERY);
         //Log.d("test","배터리확인 : " + BatteyVoltage.getBatteryVoltage());
         VoltageTextView.setText(String.format("%.1f", BatteyVoltage.getBatteryVoltage())+"V");
+    }
+
+    public void onArmButtonTap(View view) {
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+
+        if (vehicleState.isFlying()) {
+            // Land
+            VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_LAND, new SimpleCommandListener() {
+                @Override
+                public void onError(int executionError) {
+                    alertUser("Unable to land the vehicle.");
+                }
+
+                @Override
+                public void onTimeout() {
+                    alertUser("Unable to land the vehicle.");
+                }
+            });
+        } else if (vehicleState.isArmed()) {
+            // Take off
+            ControlApi.getApi(this.drone).takeoff(3, new AbstractCommandListener() {
+
+                @Override
+                public void onSuccess() {
+                    alertUser("Taking off...");
+                }
+
+                @Override
+                public void onError(int i) {
+                    alertUser("Unable to take off.");
+                }
+
+                @Override
+                public void onTimeout() {
+                    alertUser("Unable to take off.");
+                }
+            });
+        } else if (!vehicleState.isConnected()) {
+            // Connect
+            alertUser("Connect to a drone first");
+        } else {
+            // Connected but not Armed
+            VehicleApi.getApi(this.drone).arm(true, false, new SimpleCommandListener() {
+                @Override
+                public void onError(int executionError) {
+                    alertUser("Unable to arm vehicle.");
+                }
+
+                @Override
+                public void onTimeout() {
+                    alertUser("Arming operation timed out.");
+                }
+            });
+        }
     }
 
     public void onFlightModeSelected(View view) {
@@ -352,14 +405,39 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         distanceTextView.setText(String.format("%3.1f", distanceFromHome) + "m");
     }
 
+    protected void updateArmButton() {
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+        Button armButton = (Button) findViewById(R.id.arm_button);
+
+        if (!this.drone.isConnected()) {
+            armButton.setVisibility(View.INVISIBLE);
+        } else {
+            armButton.setVisibility(View.VISIBLE);
+        }
+
+        if (vehicleState.isFlying()) {
+            // Land
+            armButton.setText("LAND");
+        } else if (vehicleState.isArmed()) {
+            // Take off
+            armButton.setText("TAKE OFF");
+        } else if (vehicleState.isConnected()) {
+            // Connected but not Armed
+            armButton.setText("ARM");
+        }
+    }
+
+
 
 
     protected void updateConnectedButton(Boolean isConnected) {
         Button connectButton = (Button) findViewById(R.id.btnConnect);
         if (isConnected) {
-            connectButton.setText(getText(R.string.button_disconnect));
+            connectButton.setText("Disconnect");
+           // drone_marker.setMap(null);
         } else {
-            connectButton.setText(getText(R.string.button_connect));
+            connectButton.setText("Connect");
+
         }
     }
 
