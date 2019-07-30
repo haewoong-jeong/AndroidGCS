@@ -226,14 +226,14 @@
         android:onClick="onArmButtonTap"/>
 
     <Button
-        android:id="@+id/button3"
+        android:id="@+id/btn_map_move"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignEnd="@+id/map"
         android:layout_alignBottom="@+id/map"
         android:layout_marginEnd="288dp"
         android:layout_marginBottom="15dp"
-        android:text="맵 잠금" />
+        android:text="맵 이동" />
 
     <Button
         android:id="@+id/mapbutton"

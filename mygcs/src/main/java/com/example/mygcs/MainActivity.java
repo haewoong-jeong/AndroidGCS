@@ -17,10 +17,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.naver.maps.geometry.LatLng;
+import com.naver.maps.geometry.LatLngBounds;
+import com.naver.maps.map.CameraPosition;
+import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.overlay.Overlay;
+import com.naver.maps.map.overlay.OverlayImage;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
@@ -60,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private NaverMap nMap;
     private Marker drone_marker = new Marker();
     boolean check = true;
+    boolean check1 = true;
 
     private Spinner modeSelector;
 
@@ -127,6 +133,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             }
         });
 
+        Button MoveMap = (Button) findViewById(R.id.btn_map_move);
+        MoveMap.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                updateMapMoveButton();
+            }
+        });
     }
 
     public void testMethod() {
@@ -134,29 +146,21 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
 
 
-
-
-
-
-
-    public void onMapReady(@NonNull NaverMap naverMap){
+    public void onMapReady(@NonNull NaverMap naverMap) {
 
         naverMap.setMapType(NaverMap.MapType.Basic);
         Gps test = this.drone.getAttribute(AttributeType.GPS);
         nMap = naverMap;
 
 
-
-
-
-       // LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
+        // LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
         //Log.d("test","좌표확인 : " + test.getPosition());
 
-       // CameraPosition cameraPosition = new CameraPosition(knu, 9);
-       // naverMap.setCameraPosition(cameraPosition);
-      // Marker marker = new Marker();
-       // marker.setPosition(knu);
-       // marker.setMap(naverMap);
+        // CameraPosition cameraPosition = new CameraPosition(knu, 9);
+        // naverMap.setCameraPosition(cameraPosition);
+        // Marker marker = new Marker();
+        // marker.setPosition(knu);
+        // marker.setMap(naverMap);
     }
 
     @Override
@@ -205,12 +209,14 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
             case AttributeEvent.GPS_POSITION:
                 maker();
+                camera();
                 break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
                 break;
             case AttributeEvent.GPS_COUNT:
-                updateSatellite();;
+                updateSatellite();
+
                 break;
             case AttributeEvent.ATTITUDE_UPDATED:
                 updateYaw();
@@ -235,14 +241,40 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
         }
     }
+    protected  void camera()
+    {
+        Button MapMove = (Button) findViewById(R.id.btn_map_move);
+        Gps test = this.drone.getAttribute(AttributeType.GPS);
+        LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
+        if(check1==true)
+        {CameraUpdate cameraUpdate = CameraUpdate.scrollTo(knu);  nMap.moveCamera(cameraUpdate);}
+        else if(check1 == false) {
+         nMap.moveCamera(null);}
+
+    }
+
+    protected void updateMapMoveButton(){
+        Button MapMove = (Button) findViewById(R.id.btn_map_move);
+        if (check1 == true) {
+            MapMove.setText("맵 잠금");
+            check1 = false;
+        } else if(check1 == false) {
+            MapMove.setText("맵 이동");
+            check1 = true;
+
+        }
+    }
 
     protected  void maker()
     {
+        OverlayImage image =OverlayImage.fromResource(R.drawable.circled_chevron_up_100px);
         Gps test = this.drone.getAttribute(AttributeType.GPS);
         LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
-        //Marker marker = new Marker();
         drone_marker.setPosition(knu);
         drone_marker.setMap(nMap);
+        drone_marker.setIcon(image);
+        drone_marker.setWidth(150);
+        drone_marker.setHeight(150);
     }
 
     protected void updateSatellite()
@@ -428,8 +460,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
 
 
-
-
     protected void updateConnectedButton(Boolean isConnected) {
         Button connectButton = (Button) findViewById(R.id.btnConnect);
         if (isConnected) {
@@ -488,7 +518,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Button statebutton = (Button) findViewById(R.id.mapbutton);
         Button Satellitebutton = (Button) findViewById(R.id.mapSatellitebutton);
         nMap.setMapType(NaverMap.MapType.Satellite);
-        statebutton.setText("지형도");
+
+        statebutton.setText("위성지도");
+
+        OverlayImage image =OverlayImage.fromResource(R.drawable.middle_finger);
+        drone_marker.setIcon(image);
+        drone_marker.setWidth(150);
+        drone_marker.setHeight(150);
     }
 
 
