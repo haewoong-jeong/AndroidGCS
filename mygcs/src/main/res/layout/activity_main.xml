@@ -246,14 +246,15 @@
         android:text="일반지도" />
 
     <Button
-        android:id="@+id/button5"
+        android:id="@+id/btn_cadastral"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignEnd="@+id/map"
         android:layout_alignBottom="@+id/map"
         android:layout_marginEnd="103dp"
         android:layout_marginBottom="15dp"
-        android:text="지적도off" />
+        android:text="지적도on"
+        android:onClick="cadastral"/>
 
     <Button
         android:id="@+id/button6"

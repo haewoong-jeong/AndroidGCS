@@ -2,7 +2,6 @@ package com.example.mygcs;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
-import android.graphics.PointF;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
@@ -18,15 +17,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.naver.maps.geometry.LatLng;
-import com.naver.maps.geometry.LatLngBounds;
-import com.naver.maps.map.CameraPosition;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
-import com.naver.maps.map.overlay.LocationOverlay;
 import com.naver.maps.map.overlay.Marker;
-import com.naver.maps.map.overlay.Overlay;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
@@ -66,8 +61,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private final Handler handler = new Handler();
     private NaverMap nMap;
     private Marker drone_marker = new Marker();
+    private Marker my_pos = new Marker();
     boolean check = true;
     boolean check1 = true;
+    boolean check2 = true;
 
     private Spinner modeSelector;
 
@@ -143,8 +140,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
 
 
-        LocationOverlay locationOverlay = nMap.getLocationOverlay();
-        locationOverlay.setVisible(true);
     }
 
     public void testMethod() {
@@ -212,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             case AttributeEvent.GPS_POSITION:
                 marker();
                 camera();
+                mypos();
                 break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
@@ -243,6 +239,21 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
         }
     }
+    public   void cadastral(View view){
+        Button map_Cad = (Button) findViewById(R.id.btn_cadastral);
+
+        if(check2==true) {
+            nMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_CADASTRAL, true);
+            map_Cad.setText("지적도 off");
+            check2=false;
+        }
+        else if(check2==false){
+            nMap.setLayerGroupEnabled(NaverMap.LAYER_GROUP_CADASTRAL, false);
+            map_Cad.setText("지적도 on");
+            check2=true;
+        }
+    }
+
     //맵잠금
     protected  void camera()  {
         Button MapMove = (Button) findViewById(R.id.btn_map_move);
@@ -265,7 +276,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
         }
     }
-    //드론마커표시
+    //드론마커표시및방향
     protected  void marker()  {
         OverlayImage image =OverlayImage.fromResource(R.drawable.circled_chevron_up_100px);
         Gps test = this.drone.getAttribute(AttributeType.GPS);
@@ -281,7 +292,18 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         if(int_Yaw >-180 || int_Yaw<0)  {  int_Yaw= 360+int_Yaw; }
         drone_marker.setAngle(int_Yaw);
     }
-
+    //사용자위치마커
+    protected  void mypos()  {
+        OverlayImage image =OverlayImage.fromResource(R.drawable.floating_guru_48px);
+        Home mypos =this.drone.getAttribute(AttributeType.HOME);
+        LatLong myPosition = mypos.getCoordinate();
+        LatLng my = new LatLng(myPosition.getLatitude(), myPosition.getLongitude());
+        my_pos.setPosition(my);
+        my_pos.setMap(nMap);
+        my_pos.setIcon(image);
+        my_pos.setWidth(150);
+        my_pos.setHeight(150);
+    }
     //ARM
     public void onArmButtonTap(View view) {
         State vehicleState = this.drone.getAttribute(AttributeType.STATE);
@@ -436,7 +458,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     protected void updateSatellite(){
         TextView SatelliteTextView = (TextView) findViewById(R.id.satelliteValueTextView);
         Gps satellite = this.drone.getAttribute(AttributeType.GPS);
-        Log.d("test","좌표확인 : " + satellite.getPosition().getLatitude());
+       // Log.d("test","좌표확인 : " + satellite.getPosition().getLatitude());
         SatelliteTextView.setText(String.format("%d", satellite.getSatellitesCount()));
     }
     //yaw값
