@@ -2,6 +2,8 @@ package com.example.mygcs;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
+import android.graphics.PointF;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
@@ -23,6 +25,7 @@ import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
+import com.naver.maps.map.overlay.PolylineOverlay;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
@@ -48,6 +51,9 @@ import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements DroneListener, TowerListener, LinkListener, OnMapReadyCallback {
@@ -62,6 +68,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private NaverMap nMap;
     private Marker drone_marker = new Marker();
     private Marker my_pos = new Marker();
+    private  PolylineOverlay polyline = new PolylineOverlay();
+    ArrayList Line = new ArrayList();
+
     boolean check = true;
     boolean check1 = true;
     boolean check2 = true;
@@ -208,6 +217,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 marker();
                 camera();
                 mypos();
+                line();
                 break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
@@ -239,7 +249,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
         }
     }
-    public   void cadastral(View view){
+    //지적도
+    public void cadastral(View view){
         Button map_Cad = (Button) findViewById(R.id.btn_cadastral);
 
         if(check2==true) {
@@ -252,6 +263,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             map_Cad.setText("지적도 on");
             check2=true;
         }
+    }
+
+    public void lineClear(View view){
+        Button Clear = (Button) findViewById(R.id.line_clear);
+
+        Line.clear();
     }
 
     //맵잠금
@@ -298,11 +315,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Home mypos =this.drone.getAttribute(AttributeType.HOME);
         LatLong myPosition = mypos.getCoordinate();
         LatLng my = new LatLng(myPosition.getLatitude(), myPosition.getLongitude());
+
         my_pos.setPosition(my);
-        my_pos.setMap(nMap);
         my_pos.setIcon(image);
         my_pos.setWidth(150);
         my_pos.setHeight(150);
+        my_pos.setAnchor(new PointF(0.5f,0.5f));
+        my_pos.setMap(nMap);
     }
     //ARM
     public void onArmButtonTap(View view) {
@@ -537,6 +556,19 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         drone_marker.setIcon(image);
         drone_marker.setWidth(150);
         drone_marker.setHeight(150);
+    }
+
+    //드론 궤적
+   protected void line(){
+        Gps drone_Gps = this.drone.getAttribute(AttributeType.GPS);
+        LatLng drone = new LatLng(drone_Gps.getPosition().getLatitude(), drone_Gps.getPosition().getLongitude());
+
+        Line.add(drone);
+        polyline.setCoords(Line);
+        polyline.setWidth(10);
+        polyline.setColor(Color.YELLOW);
+        polyline.setJoinType(PolylineOverlay.LineJoin.Round);
+        polyline.setMap(nMap);
     }
 
     @Override
