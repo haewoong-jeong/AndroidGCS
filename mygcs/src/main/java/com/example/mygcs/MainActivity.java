@@ -23,6 +23,7 @@ import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
+import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.overlay.PolylineOverlay;
@@ -68,7 +69,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private NaverMap nMap;
     private Marker drone_marker = new Marker();
     private Marker my_pos = new Marker();
+    private Marker map_marker = new Marker();
     private  PolylineOverlay polyline = new PolylineOverlay();
+    private final InfoWindow location = new InfoWindow();
     ArrayList Line = new ArrayList();
 
     boolean check = true;
@@ -147,7 +150,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 updateMapMoveButton();
             }
         });
-
 
     }
 
@@ -238,6 +240,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             case AttributeEvent.SPEED_UPDATED:
                 updateSpeed();
                 break;
+            case AttributeEvent.GUIDED_POINT_UPDATED:
+                Map_Click();
+                break;
 
             case AttributeEvent.HOME_UPDATED:
                 updateDistanceFromHome();
@@ -265,6 +270,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
+    //궤적 클리어
     public void lineClear(View view){
         Button Clear = (Button) findViewById(R.id.line_clear);
 
@@ -558,6 +564,39 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         drone_marker.setHeight(150);
     }
 
+    protected  void Map_Click()
+    {
+        nMap.setOnMapLongClickListener((point, coord) -> {
+
+            LatLng la = coord;
+            map_marker.setPosition(la);
+            map_marker.setMap(nMap);
+            VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_GUIDED , new SimpleCommandListener(){
+                public void onSuccess() {
+                    alertUser("간다...");
+                }
+            });
+
+            LatLong here = new LatLong(coord.latitude,coord.longitude);
+            ControlApi.getApi(this.drone).goTo(here, true, new SimpleCommandListener(){
+                public void onSuccess() {
+                    alertUser("다왔다...");
+                }
+                @Override
+                public void onError(int i) {
+                    alertUser("Unable to go to.");
+                }
+                @Override
+                public void onTimeout() {
+                    alertUser("Unable to go to.");
+                }
+            });
+
+
+        });
+    }
+
+
     //드론 궤적
    protected void line(){
         Gps drone_Gps = this.drone.getAttribute(AttributeType.GPS);
@@ -570,6 +609,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         polyline.setJoinType(PolylineOverlay.LineJoin.Round);
         polyline.setMap(nMap);
     }
+
 
     @Override
     public void onDroneServiceInterrupted(String errorMsg) {
