@@ -73,10 +73,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private  PolylineOverlay polyline = new PolylineOverlay();
     private final InfoWindow location = new InfoWindow();
     ArrayList Line = new ArrayList();
+    private int count = 3;
 
     boolean check = true;
     boolean check1 = true;
     boolean check2 = true;
+    boolean check3 = true;
 
     private Spinner modeSelector;
 
@@ -311,6 +313,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         drone_marker.setIcon(image);
         drone_marker.setWidth(150);
         drone_marker.setHeight(150);
+        drone_marker.setAnchor(new PointF(0.5f,0.5f));
 
         if(int_Yaw >-180 || int_Yaw<0)  {  int_Yaw= 360+int_Yaw; }
         drone_marker.setAngle(int_Yaw);
@@ -348,7 +351,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             });
         } else if (vehicleState.isArmed()) {
             // Take off
-            ControlApi.getApi(this.drone).takeoff(3, new AbstractCommandListener() {
+            ControlApi.getApi(this.drone).takeoff((double)count, new AbstractCommandListener() {
 
                 @Override
                 public void onSuccess() {
@@ -564,8 +567,39 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         drone_marker.setHeight(150);
     }
 
-    protected  void Map_Click()
-    {
+    //고도변경
+    public void Altitude_up(View view){
+        Button up = (Button) findViewById(R.id.Altitude_up);
+        Button Altval = (Button) findViewById(R.id.Altitude_Val);
+        count++;
+        Altval.setText(String.format("고도  %dM", count));
+
+    }
+    public void Altitude_down(View view){
+        Button down = (Button) findViewById(R.id.Altitude_down);
+        Button Altval = (Button) findViewById(R.id.Altitude_Val);
+
+        count--;
+        Altval.setText(String.format("고도  %dM", count));
+    }
+    public void Altitude_val(View view){
+        Button Altval = (Button) findViewById(R.id.Altitude_Val);
+        Button down = (Button) findViewById(R.id.Altitude_down);
+        Button up = (Button) findViewById(R.id.Altitude_up);
+
+        if(check3 == true) {
+            up.setVisibility(View.INVISIBLE);
+            down.setVisibility(View.INVISIBLE);
+            check3 = false;
+        }
+        else if(check3 == false) {
+            up.setVisibility(View.VISIBLE);
+            down.setVisibility(View.VISIBLE);
+            check3 = true;
+        }
+    }
+
+    protected  void Map_Click(){
         nMap.setOnMapLongClickListener((point, coord) -> {
 
             LatLng la = coord;
