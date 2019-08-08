@@ -2,10 +2,13 @@ package com.example.mygcs;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PointF;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.constraint.solver.widgets.Rectangle;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -70,10 +73,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private Marker drone_marker = new Marker();
     private Marker my_pos = new Marker();
     private Marker map_marker = new Marker();
+    private Marker A_marker = new Marker();
+    private Marker B_marker = new Marker();
     private  PolylineOverlay polyline = new PolylineOverlay();
     private final InfoWindow location = new InfoWindow();
     ArrayList Line = new ArrayList();
     private int count = 3;
+    private boolean marker_count=true;
 
     boolean check = true;
     boolean check1 = true;
@@ -222,6 +228,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 camera();
                 mypos();
                 line();
+                Map_Click2();
                 break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
@@ -626,6 +633,34 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
             });
 
+
+        });
+    }
+    protected void Map_Click2(){
+
+        nMap.setOnMapLongClickListener((point, coord) -> {
+
+        if(marker_count==true){
+            OverlayImage image =OverlayImage.fromResource(R.drawable.a_40px);
+            LatLng la = coord;
+            A_marker.setPosition(la);
+            A_marker.setMap(nMap);
+            A_marker.setIcon(image);
+            A_marker.setWidth(100);
+            A_marker.setHeight(100);
+            marker_count =false;
+        }
+        else if(marker_count==false)
+        {
+            OverlayImage image =OverlayImage.fromResource(R.drawable.b_64px);
+            LatLng la = coord;
+            B_marker.setPosition(la);
+            B_marker.setMap(nMap);
+            B_marker.setIcon(image);
+            B_marker.setWidth(100);
+            B_marker.setHeight(100);
+            marker_count =true;
+        }
 
         });
     }
