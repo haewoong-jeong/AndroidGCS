@@ -21,7 +21,10 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.google.maps.android.SphericalUtil;
 import com.naver.maps.geometry.LatLng;
+import com.naver.maps.geometry.MathUtils;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
@@ -77,6 +80,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private Marker B_marker = new Marker();
     private  PolylineOverlay polyline = new PolylineOverlay();
     private final InfoWindow location = new InfoWindow();
+    private LatLng la1, la2;
+
     ArrayList Line = new ArrayList();
     private int count = 3;
     private boolean marker_count=true;
@@ -171,7 +176,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Gps test = this.drone.getAttribute(AttributeType.GPS);
         nMap = naverMap;
 
-
         // LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
         //Log.d("test","좌표확인 : " + test.getPosition());
 
@@ -204,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 alertUser("Drone Connected");
                 updateConnectedButton(this.drone.isConnected());
                 updateArmButton();
+                Map_Click2();
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
@@ -228,7 +233,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 camera();
                 mypos();
                 line();
-                Map_Click2();
+
                 break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
@@ -642,8 +647,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
         if(marker_count==true){
             OverlayImage image =OverlayImage.fromResource(R.drawable.a_40px);
-            LatLng la = coord;
-            A_marker.setPosition(la);
+
+            la1 = coord;
+
+            A_marker.setPosition(la1);
             A_marker.setMap(nMap);
             A_marker.setIcon(image);
             A_marker.setWidth(100);
@@ -653,17 +660,41 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         else if(marker_count==false)
         {
             OverlayImage image =OverlayImage.fromResource(R.drawable.b_64px);
-            LatLng la = coord;
-            B_marker.setPosition(la);
+            la2 = coord;
+            B_marker.setPosition(la2);
             B_marker.setMap(nMap);
             B_marker.setIcon(image);
             B_marker.setWidth(100);
             B_marker.setHeight(100);
             marker_count =true;
+            double distance = discomputeAngleBetween(la1,la2)* 6371009.0D;;
+            Toast.makeText(this, (int)distance +"m", Toast.LENGTH_LONG).show();
+            Log.d("test","값 : " + la1 );
+            Log.d("test2","값 : " + la2 );
         }
+
 
         });
     }
+
+    public double discomputeAngleBetween(LatLng from, LatLng to){
+        return distanceRadians(Math.toRadians(from.latitude), Math.toRadians(from.longitude), Math.toRadians(to.latitude), Math.toRadians(to.longitude));
+    }
+    private static double distanceRadians(double lat1, double lng1, double lat2, double lng2) {
+        return arcHav(havDistance(lat1, lat2, lng1 - lng2));
+    }
+    static double arcHav(double x) {
+        return 2.0D * Math.asin(Math.sqrt(x));
+    }
+    static double havDistance(double lat1, double lat2, double dLng) {
+        return hav(lat1 - lat2) + hav(dLng) * Math.cos(lat1) * Math.cos(lat2);
+    }
+    static double hav(double x) {
+        double sinHalf = Math.sin(x * 0.5D);
+        return sinHalf * sinHalf;
+    }
+
+
 
 
     //드론 궤적

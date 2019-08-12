@@ -43,4 +43,6 @@ dependencies {
 
     // Drone API
     implementation project(':ClientLib')
+
+    implementation 'com.google.maps.android:android-maps-utils:0.5'
 }
