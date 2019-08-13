@@ -24,11 +24,12 @@ import android.widget.Toast;
 
 import com.google.maps.android.SphericalUtil;
 import com.naver.maps.geometry.LatLng;
-import com.naver.maps.geometry.MathUtils;
+import com.naver.maps.geometry.LatLngBounds;
 import com.naver.maps.map.CameraUpdate;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
+import com.naver.maps.map.overlay.GroundOverlay;
 import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
 import com.naver.maps.map.overlay.OverlayImage;
@@ -45,6 +46,7 @@ import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
+import com.o3dr.services.android.lib.drone.mission.item.spatial.Circle;
 import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
@@ -57,6 +59,7 @@ import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
+import com.o3dr.services.android.lib.util.MathUtils;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -78,9 +81,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private Marker map_marker = new Marker();
     private Marker A_marker = new Marker();
     private Marker B_marker = new Marker();
+    private Marker C_marker = new Marker();
+    private Marker D_marker = new Marker();
     private  PolylineOverlay polyline = new PolylineOverlay();
     private final InfoWindow location = new InfoWindow();
     private LatLng la1, la2;
+    private LatLong la3, la4;
+    private PolylineOverlay Mapclic2_polyline = new PolylineOverlay();
 
     ArrayList Line = new ArrayList();
     private int count = 3;
@@ -208,7 +215,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 alertUser("Drone Connected");
                 updateConnectedButton(this.drone.isConnected());
                 updateArmButton();
-                Map_Click2();
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
@@ -233,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 camera();
                 mypos();
                 line();
-
+                Map_Click2();
                 break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
@@ -646,31 +652,73 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         nMap.setOnMapLongClickListener((point, coord) -> {
 
         if(marker_count==true){
-            OverlayImage image =OverlayImage.fromResource(R.drawable.a_40px);
+            OverlayImage image1 =OverlayImage.fromResource(R.drawable.map_pin_40px);
 
             la1 = coord;
 
             A_marker.setPosition(la1);
             A_marker.setMap(nMap);
-            A_marker.setIcon(image);
-            A_marker.setWidth(100);
-            A_marker.setHeight(100);
+            A_marker.setIcon(image1);
+            A_marker.setWidth(70);
+            A_marker.setHeight(70);
             marker_count =false;
+            Mapclic2_polyline.setMap(null);
+            B_marker.setMap(null);
+            C_marker.setMap(null);
+            D_marker.setMap(null);
+
         }
         else if(marker_count==false)
         {
-            OverlayImage image =OverlayImage.fromResource(R.drawable.b_64px);
+            OverlayImage image =OverlayImage.fromResource(R.drawable.map_pin_filled_50px);
+            OverlayImage image1 =OverlayImage.fromResource(R.drawable.map_pin_40px);
             la2 = coord;
             B_marker.setPosition(la2);
             B_marker.setMap(nMap);
             B_marker.setIcon(image);
-            B_marker.setWidth(100);
-            B_marker.setHeight(100);
+            B_marker.setWidth(70);
+            B_marker.setHeight(70);
             marker_count =true;
-            double distance = discomputeAngleBetween(la1,la2)* 6371009.0D;;
+            double distance = discomputeAngleBetween(la1,la2)* 6371009.0D;
             Toast.makeText(this, (int)distance +"m", Toast.LENGTH_LONG).show();
             Log.d("test","값 : " + la1 );
             Log.d("test2","값 : " + la2 );
+
+            LatLong point1 = new LatLong(la2.latitude,la2.longitude);
+            LatLong point2 = new LatLong(la1.latitude,la1.longitude);
+
+
+            la3 = MathUtils.newCoordFromBearingAndDistance(point1, 90, 50);
+            la4 = MathUtils.newCoordFromBearingAndDistance(point2, 90, 50);
+
+            double a = la3.getLatitude();
+            double b = la3.getLongitude();
+            double c = la4.getLatitude();
+            double d = la4.getLongitude();
+
+            LatLng e= new LatLng(a,b);
+            LatLng f= new LatLng(c,d);
+
+
+
+            C_marker.setPosition(e);
+            C_marker.setMap(nMap);
+            C_marker.setIcon(image);
+            C_marker.setWidth(70);
+            C_marker.setHeight(70);
+
+            D_marker.setPosition(f);
+            D_marker.setMap(nMap);
+            D_marker.setIcon(image1);
+            D_marker.setWidth(70);
+            D_marker.setHeight(70);
+
+
+
+            Mapclic2_polyline.setCoords(Arrays.asList(
+                   la1, la2, e,f, la1
+            ));
+            Mapclic2_polyline.setMap(nMap);
         }
 
 
