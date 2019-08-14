@@ -688,17 +688,20 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             LatLong point2 = new LatLong(la1.latitude,la1.longitude);
 
 
-            la3 = MathUtils.newCoordFromBearingAndDistance(point1, 90, 50);
-            la4 = MathUtils.newCoordFromBearingAndDistance(point2, 90, 50);
+            la3 = MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, 50);
+            la4 = MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, 50);
+
+
+
 
             double a = la3.getLatitude();
             double b = la3.getLongitude();
             double c = la4.getLatitude();
             double d = la4.getLongitude();
 
+
             LatLng e= new LatLng(a,b);
             LatLng f= new LatLng(c,d);
-
 
 
             C_marker.setPosition(e);
@@ -714,14 +717,15 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             D_marker.setHeight(70);
 
 
+            Toast.makeText(this, MathUtils.getHeadingFromCoordinates(point2,point1) +"도", Toast.LENGTH_LONG).show();
+
+
 
             Mapclic2_polyline.setCoords(Arrays.asList(
                    la1, la2, e,f, la1
             ));
             Mapclic2_polyline.setMap(nMap);
         }
-
-
         });
     }
 
