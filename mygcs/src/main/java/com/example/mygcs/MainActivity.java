@@ -37,6 +37,7 @@ import com.naver.maps.map.overlay.PolylineOverlay;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.LinkListener;
@@ -47,6 +48,7 @@ import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.mission.item.spatial.Circle;
+import com.o3dr.services.android.lib.drone.mission.item.spatial.Waypoint;
 import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
@@ -86,7 +88,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private  PolylineOverlay polyline = new PolylineOverlay();
     private final InfoWindow location = new InfoWindow();
     private LatLng la1, la2;
-    private LatLong la3, la4;
+    private List<LatLng> Map_point =new ArrayList<>();
+    private LatLong la_1, la_2, la_3,la_4,la_5,la_6,la_7,la_8,la_9, la_10, laa_1, laa_2, laa_3,laa_4,laa_5,laa_6,laa_7,laa_8,laa_9, laa_10;
     private PolylineOverlay Mapclic2_polyline = new PolylineOverlay();
 
     ArrayList Line = new ArrayList();
@@ -97,6 +100,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     boolean check1 = true;
     boolean check2 = true;
     boolean check3 = true;
+    boolean your_name = true;
+
 
     private Spinner modeSelector;
 
@@ -215,6 +220,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 alertUser("Drone Connected");
                 updateConnectedButton(this.drone.isConnected());
                 updateArmButton();
+                Map_Click2();
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
@@ -239,7 +245,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 camera();
                 mypos();
                 line();
-                Map_Click2();
+
                 break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
@@ -263,6 +269,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             case AttributeEvent.GUIDED_POINT_UPDATED:
                 Map_Click();
                 break;
+
 
             case AttributeEvent.HOME_UPDATED:
                 updateDistanceFromHome();
@@ -644,6 +651,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
             });
 
+            //MissionApi.getApi(this.drone).startMission();
+
 
         });
     }
@@ -655,6 +664,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             OverlayImage image1 =OverlayImage.fromResource(R.drawable.map_pin_40px);
 
             la1 = coord;
+            your_name =true;
 
             A_marker.setPosition(la1);
             A_marker.setMap(nMap);
@@ -666,6 +676,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             B_marker.setMap(null);
             C_marker.setMap(null);
             D_marker.setMap(null);
+            Map_point.clear();
 
         }
         else if(marker_count==false)
@@ -684,33 +695,32 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             Log.d("test","값 : " + la1 );
             Log.d("test2","값 : " + la2 );
 
-            LatLong point1 = new LatLong(la2.latitude,la2.longitude);
-            LatLong point2 = new LatLong(la1.latitude,la1.longitude);
+
+            LatLong point1 = change_LatLong(la2);
+            LatLong point2 =  change_LatLong(la1);
+
+            for(int  i=0; i<=50; i+=5)
+            {
+                if(your_name==true) {
+                    Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
+                    Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
+                    your_name = false;
+                }
+               else if(your_name==false) {
+                    Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
+                    Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
+                    your_name = true;
+                }
+            }
 
 
-            la3 = MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, 50);
-            la4 = MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, 50);
-
-
-
-
-            double a = la3.getLatitude();
-            double b = la3.getLongitude();
-            double c = la4.getLatitude();
-            double d = la4.getLongitude();
-
-
-            LatLng e= new LatLng(a,b);
-            LatLng f= new LatLng(c,d);
-
-
-            C_marker.setPosition(e);
+            C_marker.setPosition(Map_point.get(Map_point.size()-1));
             C_marker.setMap(nMap);
             C_marker.setIcon(image);
             C_marker.setWidth(70);
             C_marker.setHeight(70);
 
-            D_marker.setPosition(f);
+            D_marker.setPosition(Map_point.get(Map_point.size()-2));
             D_marker.setMap(nMap);
             D_marker.setIcon(image1);
             D_marker.setWidth(70);
@@ -719,14 +729,21 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
             Toast.makeText(this, MathUtils.getHeadingFromCoordinates(point2,point1) +"도", Toast.LENGTH_LONG).show();
 
-
-
-            Mapclic2_polyline.setCoords(Arrays.asList(
-                   la1, la2, e,f, la1
-            ));
+            Mapclic2_polyline.setCoords(Map_point);
             Mapclic2_polyline.setMap(nMap);
         }
         });
+    }
+    //LatLong, LatLng 변환함수
+    public LatLong change_LatLong(LatLng a){
+        LatLong Long = new LatLong(a.latitude,a.longitude);
+        return  Long;
+    }
+    public LatLng change_LatLng(LatLong a){
+        double Lat= a.getLatitude();
+        double Long = a.getLongitude();
+        LatLng new_Lng = new LatLng(Lat,Long);
+        return new_Lng;
     }
 
     public double discomputeAngleBetween(LatLng from, LatLng to){
