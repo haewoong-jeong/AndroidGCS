@@ -47,6 +47,7 @@ import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
+import com.o3dr.services.android.lib.drone.mission.Mission;
 import com.o3dr.services.android.lib.drone.mission.item.spatial.Circle;
 import com.o3dr.services.android.lib.drone.mission.item.spatial.Waypoint;
 import com.o3dr.services.android.lib.drone.property.Altitude;
@@ -89,17 +90,22 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private final InfoWindow location = new InfoWindow();
     private LatLng la1, la2;
     private List<LatLng> Map_point =new ArrayList<>();
-    private LatLong la_1, la_2, la_3,la_4,la_5,la_6,la_7,la_8,la_9, la_10, laa_1, laa_2, laa_3,laa_4,laa_5,laa_6,laa_7,laa_8,laa_9, laa_10;
+    private List<Waypoint> wayp = new ArrayList<>();
+    private   LatLongAlt coordinate;
+    private Mission mis = new Mission();
+
     private PolylineOverlay Mapclic2_polyline = new PolylineOverlay();
 
     ArrayList Line = new ArrayList();
     private int count = 3;
+    private int count1 = 0;
     private boolean marker_count=true;
 
-    boolean check = true;
+    boolean check = false;
     boolean check1 = true;
     boolean check2 = true;
     boolean check3 = true;
+    boolean check4 = false;
     boolean your_name = true;
 
 
@@ -654,6 +660,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             //MissionApi.getApi(this.drone).startMission();
 
 
+
         });
     }
     protected void Map_Click2(){
@@ -692,9 +699,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             marker_count =true;
             double distance = discomputeAngleBetween(la1,la2)* 6371009.0D;
             Toast.makeText(this, (int)distance +"m", Toast.LENGTH_LONG).show();
-            Log.d("test","값 : " + la1 );
-            Log.d("test2","값 : " + la2 );
-
 
             LatLong point1 = change_LatLong(la2);
             LatLong point2 =  change_LatLong(la1);
@@ -727,12 +731,113 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             D_marker.setHeight(70);
 
 
+
+
+           Waypoint way= new Waypoint();
+           way.setDelay(1);
+           way.setCoordinate(new LatLongAlt(la1.latitude,la1.longitude,count));
+
+           mis.addMissionItem(way);
+
+
             Toast.makeText(this, MathUtils.getHeadingFromCoordinates(point2,point1) +"도", Toast.LENGTH_LONG).show();
 
             Mapclic2_polyline.setCoords(Map_point);
             Mapclic2_polyline.setMap(nMap);
         }
         });
+    }
+
+    //모드변경
+    public void modeButton(View view) {
+        Button basicmode = (Button) findViewById(R.id.basic_mode_btn);
+        Button interval = (Button) findViewById(R.id.interval_monitoring_btn);
+        Button area = (Button) findViewById(R.id.Area_Monitoring_btn);
+        Button route = (Button) findViewById(R.id.route_flight_mode_btn);
+        Button statemodebutton = (Button) findViewById(R.id.mode_btn);
+
+        if(check4 == true) {
+            basicmode.setVisibility(View.INVISIBLE);
+            interval.setVisibility(View.INVISIBLE);
+            area.setVisibility(View.INVISIBLE);
+            route.setVisibility(View.INVISIBLE);
+            check4 = false;
+        }
+        else if(check4 == false) {
+            basicmode.setVisibility(View.VISIBLE);
+            interval.setVisibility(View.VISIBLE);
+            area.setVisibility(View.VISIBLE);
+            route.setVisibility(View.VISIBLE);
+            check4 = true;
+        }
+    }
+    public void basicmodeButton(View view) {
+        Button statemodebutton = (Button) findViewById(R.id.mode_btn);
+        Button basicmode = (Button) findViewById(R.id.basic_mode_btn);
+        Button mission =  (Button) findViewById(R.id.mission_sent_btn);
+        //추가란
+        mission.setVisibility(View.INVISIBLE);
+        statemodebutton.setText("일반모드");
+    }
+    public void routeodeButton(View view){
+        Button statemodebutton = (Button) findViewById(R.id.mode_btn);
+        Button route = (Button) findViewById(R.id.route_flight_mode_btn);
+        Button mission =  (Button) findViewById(R.id.mission_sent_btn);
+        mission.setVisibility(View.INVISIBLE);
+        statemodebutton.setText("경로비행");
+    }
+    public void intervalmodeButton(View view){
+        Button statemodebutton = (Button) findViewById(R.id.mode_btn);
+        Button interval = (Button) findViewById(R.id.interval_monitoring_btn);
+        Button mission =  (Button) findViewById(R.id.mission_sent_btn);
+        //추가란
+        mission.setVisibility(View.VISIBLE);
+        statemodebutton.setText("간격감시");
+
+    }
+    public void AreamodeButton(View view){
+        Button statemodebutton = (Button) findViewById(R.id.mode_btn);
+        Button area = (Button) findViewById(R.id.Area_Monitoring_btn);
+        Button mission =  (Button) findViewById(R.id.mission_sent_btn);
+        mission.setVisibility(View.INVISIBLE);
+
+        statemodebutton.setText("면적감시");
+    }
+
+    public void mis_set(){
+        MissionApi.getApi(this.drone).setMission(mis, true);
+    }
+    public void mis_start(){
+
+        VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_AUTO , new SimpleCommandListener(){
+            public void onSuccess() {
+                alertUser("미션시작");
+            }
+        });
+    }
+    public void mis_stop(){
+        VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_LOITER , new SimpleCommandListener(){
+            public void onSuccess() {
+                alertUser("미션중지");
+            }
+        });
+    }
+
+    public void missionbtn(View view){
+        Button mission = (Button) findViewById(R.id.mission_sent_btn);
+
+        if(count1==0) {
+            mission.setText("임무시작");
+            count1=1;
+        }
+        else if(count1==1){
+            mission.setText("임무중지");
+            count1=2;
+        }
+        else if(count1==2){
+            mission.setText("임무전송");
+            count1=0;
+        }
     }
     //LatLong, LatLng 변환함수
     public LatLong change_LatLong(LatLng a){
@@ -746,6 +851,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         return new_Lng;
     }
 
+    //두좌표사이거리계산
     public double discomputeAngleBetween(LatLng from, LatLng to){
         return distanceRadians(Math.toRadians(from.latitude), Math.toRadians(from.longitude), Math.toRadians(to.latitude), Math.toRadians(to.longitude));
     }
@@ -762,8 +868,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         double sinHalf = Math.sin(x * 0.5D);
         return sinHalf * sinHalf;
     }
-
-
 
 
     //드론 궤적
