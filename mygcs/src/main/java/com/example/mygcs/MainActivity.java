@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     ArrayList Line = new ArrayList();
     private int count = 3;
     private int count1 = 0;
+    private int count2 = 0;
     private boolean marker_count=true;
 
     boolean check = false;
@@ -226,7 +227,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 alertUser("Drone Connected");
                 updateConnectedButton(this.drone.isConnected());
                 updateArmButton();
-                Map_Click2();
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
@@ -275,6 +275,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             case AttributeEvent.GUIDED_POINT_UPDATED:
                 Map_Click();
                 break;
+            case AttributeEvent.MISSION_SENT:
+                set_mis_text();
 
 
             case AttributeEvent.HOME_UPDATED:
@@ -306,6 +308,14 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     //궤적 클리어
     public void lineClear(View view){
         Button Clear = (Button) findViewById(R.id.line_clear);
+
+        Mapclic2_polyline.setMap(null);
+        A_marker.setMap(null);
+        B_marker.setMap(null);
+        C_marker.setMap(null);
+        D_marker.setMap(null);
+        Map_point.clear();
+        //map_marker.setMap(nMap);
 
         Line.clear();
     }
@@ -476,7 +486,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     protected void updateAltitude() {
         TextView altitudeTextView = (TextView) findViewById(R.id.altitudeValueTextView);
         Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
-        altitudeTextView.setText(String.format("%3.1f", droneAltitude.getAltitude()) + "m");
+        altitudeTextView.setText(String.format("%3.1f", droneAltitude.getRelativeAltitude()) + "m");
     }
     //속도
     protected void updateSpeed() {
@@ -630,122 +640,124 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
-    protected  void Map_Click(){
-        nMap.setOnMapLongClickListener((point, coord) -> {
 
-            LatLng la = coord;
-            map_marker.setPosition(la);
-            map_marker.setMap(nMap);
-            VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_GUIDED , new SimpleCommandListener(){
-                public void onSuccess() {
-                    alertUser("간다...");
+    protected void Map_Click(){
+
+
+            nMap.setOnMapLongClickListener((point, coord) -> {
+
+                if(count2==1) {
+                    LatLng la = coord;
+                    map_marker.setPosition(la);
+                    map_marker.setMap(nMap);
+                    VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_GUIDED, new SimpleCommandListener() {
+                        public void onSuccess() {
+                            alertUser("간다...");
+                        }
+                    });
+
+                    LatLong here = new LatLong(coord.latitude, coord.longitude);
+                    ControlApi.getApi(this.drone).goTo(here, true, new SimpleCommandListener() {
+                        public void onSuccess() {
+                            alertUser("다왔다...");
+                        }
+
+                        @Override
+                        public void onError(int i) {
+                            alertUser("Unable to go to.");
+                        }
+
+                        @Override
+                        public void onTimeout() {
+                            alertUser("Unable to go to.");
+                        }
+                    });
+                }
+                else if(count2==3) {
+                    if (marker_count == true) {
+                        OverlayImage image1 = OverlayImage.fromResource(R.drawable.map_pin_40px);
+
+                        la1 = coord;
+                        your_name = true;
+
+                        A_marker.setPosition(la1);
+                        A_marker.setMap(nMap);
+                        A_marker.setIcon(image1);
+                        A_marker.setWidth(70);
+                        A_marker.setHeight(70);
+                        marker_count = false;
+                        Mapclic2_polyline.setMap(null);
+                        B_marker.setMap(null);
+                        C_marker.setMap(null);
+                        D_marker.setMap(null);
+                        Map_point.clear();
+                        mis.clear();
+                       // map_marker.setMap(nMap);
+
+                    } else if (marker_count == false) {
+                        OverlayImage image = OverlayImage.fromResource(R.drawable.map_pin_filled_50px);
+                        OverlayImage image1 = OverlayImage.fromResource(R.drawable.map_pin_40px);
+                        la2 = coord;
+                        B_marker.setPosition(la2);
+                        B_marker.setMap(nMap);
+                        B_marker.setIcon(image);
+                        B_marker.setWidth(70);
+                        B_marker.setHeight(70);
+                        marker_count = true;
+                        double distance = discomputeAngleBetween(la1, la2) * 6371009.0D;
+                        Toast.makeText(this, (int) distance + "m", Toast.LENGTH_LONG).show();
+
+                        LatLong point1 = change_LatLong(la2);
+                        LatLong point2 = change_LatLong(la1);
+
+                        for (int i = 0; i <= 50; i += 5) {
+                            if (your_name == true) {
+                                Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
+                                Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
+                                your_name = false;
+                            } else if (your_name == false) {
+                                Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
+                                Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
+                                your_name = true;
+                            }
+                        }
+
+
+                        C_marker.setPosition(Map_point.get(Map_point.size() - 1));
+                        C_marker.setMap(nMap);
+                        C_marker.setIcon(image);
+                        C_marker.setWidth(70);
+                        C_marker.setHeight(70);
+
+                        D_marker.setPosition(Map_point.get(Map_point.size() - 2));
+                        D_marker.setMap(nMap);
+                        D_marker.setIcon(image1);
+                        D_marker.setWidth(70);
+                        D_marker.setHeight(70);
+                        Altitude droneAltitude = this.drone.getAttribute(AttributeType.ALTITUDE);
+
+
+                        for (int i = 0; i < 22; i++) {
+                            Waypoint way = new Waypoint();
+                            way.setDelay(1);
+                            way.setCoordinate(new LatLongAlt(Map_point.get(i).latitude, Map_point.get(i).longitude, droneAltitude.getRelativeAltitude()));
+                            mis.addMissionItem(way);
+                            //way.setCoordinate(new LatLongAlt(la1.latitude,la1.longitude,count));
+                        }
+           /* Waypoint way= new Waypoint();
+            way.setDelay(1);
+            way.setCoordinate(new LatLongAlt(la1.latitude,la1.longitude,count));
+            mis.addMissionItem(way);*/
+
+
+                        Toast.makeText(this, MathUtils.getHeadingFromCoordinates(point2, point1) + "도", Toast.LENGTH_LONG).show();
+
+                        Mapclic2_polyline.setCoords(Map_point);
+                        Mapclic2_polyline.setMap(nMap);
+                    }
                 }
             });
 
-            LatLong here = new LatLong(coord.latitude,coord.longitude);
-            ControlApi.getApi(this.drone).goTo(here, true, new SimpleCommandListener(){
-                public void onSuccess() {
-                    alertUser("다왔다...");
-                }
-                @Override
-                public void onError(int i) {
-                    alertUser("Unable to go to.");
-                }
-                @Override
-                public void onTimeout() {
-                    alertUser("Unable to go to.");
-                }
-            });
-
-            //MissionApi.getApi(this.drone).startMission();
-
-
-
-        });
-    }
-    protected void Map_Click2(){
-
-        nMap.setOnMapLongClickListener((point, coord) -> {
-
-        if(marker_count==true){
-            OverlayImage image1 =OverlayImage.fromResource(R.drawable.map_pin_40px);
-
-            la1 = coord;
-            your_name =true;
-
-            A_marker.setPosition(la1);
-            A_marker.setMap(nMap);
-            A_marker.setIcon(image1);
-            A_marker.setWidth(70);
-            A_marker.setHeight(70);
-            marker_count =false;
-            Mapclic2_polyline.setMap(null);
-            B_marker.setMap(null);
-            C_marker.setMap(null);
-            D_marker.setMap(null);
-            Map_point.clear();
-
-        }
-        else if(marker_count==false)
-        {
-            OverlayImage image =OverlayImage.fromResource(R.drawable.map_pin_filled_50px);
-            OverlayImage image1 =OverlayImage.fromResource(R.drawable.map_pin_40px);
-            la2 = coord;
-            B_marker.setPosition(la2);
-            B_marker.setMap(nMap);
-            B_marker.setIcon(image);
-            B_marker.setWidth(70);
-            B_marker.setHeight(70);
-            marker_count =true;
-            double distance = discomputeAngleBetween(la1,la2)* 6371009.0D;
-            Toast.makeText(this, (int)distance +"m", Toast.LENGTH_LONG).show();
-
-            LatLong point1 = change_LatLong(la2);
-            LatLong point2 =  change_LatLong(la1);
-
-            for(int  i=0; i<=50; i+=5)
-            {
-                if(your_name==true) {
-                    Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
-                    Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
-                    your_name = false;
-                }
-               else if(your_name==false) {
-                    Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
-                    Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
-                    your_name = true;
-                }
-            }
-
-
-            C_marker.setPosition(Map_point.get(Map_point.size()-1));
-            C_marker.setMap(nMap);
-            C_marker.setIcon(image);
-            C_marker.setWidth(70);
-            C_marker.setHeight(70);
-
-            D_marker.setPosition(Map_point.get(Map_point.size()-2));
-            D_marker.setMap(nMap);
-            D_marker.setIcon(image1);
-            D_marker.setWidth(70);
-            D_marker.setHeight(70);
-
-
-
-
-           Waypoint way= new Waypoint();
-           way.setDelay(1);
-           way.setCoordinate(new LatLongAlt(la1.latitude,la1.longitude,count));
-
-           mis.addMissionItem(way);
-
-
-            Toast.makeText(this, MathUtils.getHeadingFromCoordinates(point2,point1) +"도", Toast.LENGTH_LONG).show();
-
-            Mapclic2_polyline.setCoords(Map_point);
-            Mapclic2_polyline.setMap(nMap);
-        }
-        });
     }
 
     //모드변경
@@ -777,6 +789,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Button mission =  (Button) findViewById(R.id.mission_sent_btn);
         //추가란
         mission.setVisibility(View.INVISIBLE);
+        count2=1;
         statemodebutton.setText("일반모드");
     }
     public void routeodeButton(View view){
@@ -784,6 +797,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Button route = (Button) findViewById(R.id.route_flight_mode_btn);
         Button mission =  (Button) findViewById(R.id.mission_sent_btn);
         mission.setVisibility(View.INVISIBLE);
+        count2=2;
         statemodebutton.setText("경로비행");
     }
     public void intervalmodeButton(View view){
@@ -792,6 +806,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Button mission =  (Button) findViewById(R.id.mission_sent_btn);
         //추가란
         mission.setVisibility(View.VISIBLE);
+        count2=3;
         statemodebutton.setText("간격감시");
 
     }
@@ -800,8 +815,14 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Button area = (Button) findViewById(R.id.Area_Monitoring_btn);
         Button mission =  (Button) findViewById(R.id.mission_sent_btn);
         mission.setVisibility(View.INVISIBLE);
-
+        count2=4;
         statemodebutton.setText("면적감시");
+    }
+    public void set_mis_text()
+    {
+        alertUser("미션 업로드 완료");
+        Button BtnSendMission = (Button) findViewById(R.id.mode_btn);
+        BtnSendMission.setText("임무 시작");
     }
 
     public void mis_set(){
@@ -823,18 +844,22 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
     }
 
+
     public void missionbtn(View view){
         Button mission = (Button) findViewById(R.id.mission_sent_btn);
 
         if(count1==0) {
             mission.setText("임무시작");
+            mis_set();
             count1=1;
         }
         else if(count1==1){
             mission.setText("임무중지");
+            mis_start();
             count1=2;
         }
         else if(count1==2){
+            mis_stop();
             mission.setText("임무전송");
             count1=0;
         }
