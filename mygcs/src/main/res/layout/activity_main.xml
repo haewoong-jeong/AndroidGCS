@@ -413,4 +413,28 @@
         android:onClick="routeodeButton"
         android:visibility="invisible"/>
 
+    <Button
+        android:id="@+id/test_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginStart="107dp"
+        android:layout_marginBottom="43dp"
+        android:onClick="select1"
+        android:text="거리설정"
+        android:visibility="invisible" />
+
+    <Button
+        android:id="@+id/rksrur_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/map"
+        android:layout_alignBottom="@+id/map"
+        android:layout_marginStart="211dp"
+        android:layout_marginBottom="42dp"
+        android:text="간격설정"
+        android:visibility="invisible"
+        android:onClick="select2"/>
+
 </RelativeLayout>

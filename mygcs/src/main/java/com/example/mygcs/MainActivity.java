@@ -1,6 +1,7 @@
 package com.example.mygcs;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -10,6 +11,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.constraint.solver.widgets.Rectangle;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,6 +19,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -101,6 +104,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private int count1 = 0;
     private int count2 = 0;
     private boolean marker_count=true;
+    private int dis=50;
+    private int rksrur=5;
 
     boolean check = false;
     boolean check1 = true;
@@ -710,15 +715,19 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                         LatLong point1 = change_LatLong(la2);
                         LatLong point2 = change_LatLong(la1);
 
-                        for (int i = 0; i <= 50; i += 5) {
-                            if (your_name == true) {
-                                Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
-                                Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
-                                your_name = false;
-                            } else if (your_name == false) {
-                                Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
-                                Map_point.add(change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i)));
-                                your_name = true;
+                        for (int i = 0; i <= dis; i ++) {
+                            if(i%rksrur==0) {
+                                LatLng a =change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i));
+                                LatLng b =change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i));
+                                if (your_name == true) {
+                                    Map_point.add(a);
+                                    Map_point.add(b);
+                                    your_name = false;
+                                } else if (your_name == false) {
+                                    Map_point.add(b);
+                                    Map_point.add(a);
+                                    your_name = true;
+                                }
                             }
                         }
 
@@ -802,10 +811,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
     public void intervalmodeButton(View view){
         Button statemodebutton = (Button) findViewById(R.id.mode_btn);
-        Button interval = (Button) findViewById(R.id.interval_monitoring_btn);
+        Button test = (Button) findViewById(R.id.test_btn);
+        Button test1 = (Button) findViewById(R.id.rksrur_btn);
         Button mission =  (Button) findViewById(R.id.mission_sent_btn);
         //추가란
         mission.setVisibility(View.VISIBLE);
+        test.setVisibility(View.VISIBLE);
+        test1.setVisibility(View.VISIBLE);
         count2=3;
         statemodebutton.setText("간격감시");
 
@@ -818,12 +830,65 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         count2=4;
         statemodebutton.setText("면적감시");
     }
-    public void set_mis_text()
-    {
+    public void set_mis_text(){
         alertUser("미션 업로드 완료");
         Button BtnSendMission = (Button) findViewById(R.id.mode_btn);
         BtnSendMission.setText("임무 시작");
     }
+
+    public void select1(View view){
+
+        final EditText edittext = new EditText(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("거리 설정");
+        builder.setMessage("거리:");
+        builder.setView(edittext);
+        builder.setPositiveButton("저장",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            String d = edittext.getText().toString();
+                            dis = Integer.parseInt(d);
+                            Toast.makeText(getApplicationContext(),edittext.getText().toString() ,Toast.LENGTH_LONG).show();
+                            Log.d("test","거리값 : " + dis);
+                        }
+                    });
+            builder.setNegativeButton("취소",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    });
+            builder.show();
+        }
+    public void select2(View view){
+
+        final EditText edittext = new EditText(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
+
+
+        builder.setTitle("간격 설정");
+        builder.setMessage("간격:");
+        builder.setView(edittext);
+        builder.setPositiveButton("저장",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        String d = edittext.getText().toString();
+                        rksrur = Integer.parseInt(d);
+                        Toast.makeText(getApplicationContext(),edittext.getText().toString() ,Toast.LENGTH_LONG).show();
+                        Log.d("test","거리값 : " + rksrur);
+                    }
+                });
+        builder.setNegativeButton("취소",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+        builder.show();
+    }
+
 
     public void mis_set(){
         MissionApi.getApi(this.drone).setMission(mis, true);
@@ -843,7 +908,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             }
         });
     }
-
 
     public void missionbtn(View view){
         Button mission = (Button) findViewById(R.id.mission_sent_btn);
@@ -926,6 +990,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
         }
     }
+
     @Override
     public void onTowerConnected() {
         alertUser("DroneKit-Android Connected");
