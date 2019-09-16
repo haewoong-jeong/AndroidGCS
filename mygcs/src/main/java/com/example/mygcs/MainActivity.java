@@ -135,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private float cw =1.0f;
 
 
+    
 
     private Spinner modeSelector;
 
