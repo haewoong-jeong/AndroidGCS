@@ -1,6 +1,7 @@
 package com.o3dr.android.client.apis;
 
 import android.os.Bundle;
+import android.util.Log;
 
 import com.o3dr.android.client.Drone;
 import com.o3dr.services.android.lib.coordinate.LatLong;
@@ -157,7 +158,8 @@ public class ControlApi extends Api {
      * @since 2.6.9
      */
     public void manualControl(float vx, float vy, float vz, AbstractCommandListener listener) {
-        if (!isWithinBounds(vx, -1f, 1f) || !isWithinBounds(vy, -1f, 1f) || !isWithinBounds(vz, -1f, 1f)) {
+        if (!isWithinBounds(vx, -1f, 1f) || !isWithinBounds(vy, -1f, 1f) || !isWithinBounds(vz, -1f, 1f))
+        {
             postErrorEvent(CommandExecutionError.COMMAND_FAILED, listener);
             return;
         }
@@ -167,6 +169,7 @@ public class ControlApi extends Api {
         params.putFloat(EXTRA_VELOCITY_Y, vy);
         params.putFloat(EXTRA_VELOCITY_Z, vz);
         drone.performAsyncActionOnDroneThread(new Action(ACTION_SET_VELOCITY, params), listener);
+
     }
 
     /**

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Surface;
 
 import com.MAVLink.Messages.MAVLinkMessage;
@@ -389,6 +390,7 @@ public class GenericMavLinkDrone implements MavLinkDrone {
 
             case ControlActions.ACTION_SET_VELOCITY:
                 return setVelocity(data, listener);
+
 
             case ControlActions.ACTION_ENABLE_MANUAL_CONTROL:
                 return enableManualControl(data, listener);

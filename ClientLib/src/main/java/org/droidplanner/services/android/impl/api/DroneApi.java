@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import android.view.Surface;
 
@@ -18,6 +19,7 @@ import com.MAVLink.ardupilotmega.msg_mag_cal_report;
 import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.action.CameraActions;
 import com.o3dr.services.android.lib.drone.action.ConnectionActions;
+import com.o3dr.services.android.lib.drone.action.ControlActions;
 import com.o3dr.services.android.lib.drone.action.ExperimentalActions;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEventExtra;
@@ -45,6 +47,7 @@ import com.o3dr.services.android.lib.model.IObserver;
 import com.o3dr.services.android.lib.model.action.Action;
 
 import org.droidplanner.services.android.impl.communication.connection.SoloConnection;
+import org.droidplanner.services.android.impl.core.MAVLink.MavLinkCommands;
 import org.droidplanner.services.android.impl.core.drone.DroneInterfaces;
 import org.droidplanner.services.android.impl.core.drone.DroneManager;
 import org.droidplanner.services.android.impl.core.drone.autopilot.Drone;
@@ -331,6 +334,7 @@ public final class DroneApi extends IDroneApi.Stub implements DroneInterfaces.On
 
     @Override
     public void executeAction(Action action, ICommandListener listener) throws RemoteException {
+
         if (action == null) {
             return;
         }
@@ -342,12 +346,15 @@ public final class DroneApi extends IDroneApi.Stub implements DroneInterfaces.On
 
         Bundle data = action.getData();
         if (data != null) {
+
             data.setClassLoader(context.getClassLoader());
         }
 
         Drone drone = getDrone();
         switch (type) {
+
             // CONNECTION ACTIONS
+
             case ConnectionActions.ACTION_CONNECT:
                 ConnectionParameter parameter = data.getParcelable(ConnectionActions.EXTRA_CONNECT_PARAMETER);
                 connect(parameter);
