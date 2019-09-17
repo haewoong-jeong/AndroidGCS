@@ -26,7 +26,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
+import com.MAVLink.common.msg_rc_channels_override;
 import com.google.maps.android.SphericalUtil;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.geometry.LatLngBounds;
@@ -44,6 +44,7 @@ import com.naver.maps.map.util.FusedLocationSource;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.ExperimentalApi;
 import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
@@ -68,6 +69,7 @@ import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.Type;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
+import com.o3dr.services.android.lib.mavlink.MavlinkMessageWrapper;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.ICommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
@@ -75,6 +77,7 @@ import com.o3dr.services.android.lib.util.MathUtils;
 
 import org.droidplanner.services.android.impl.core.MAVLink.MavLinkCommands;
 import org.droidplanner.services.android.impl.core.drone.autopilot.MavLinkDrone;
+
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -135,7 +138,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private float cw =1.0f;
 
 
-    
+
 
     private Spinner modeSelector;
 
@@ -820,12 +823,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
                 if(count2==2){
 
-
-                    enableVirtualStick();
-                    sendVirtualStickCommands(2000,2000,2000);
-
-
-
                 }
                 if(count2==4)
                 {
@@ -1110,10 +1107,23 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     //yaw_rc_test
     protected void test() {
 
-        enableVirtualStick();
-        sendVirtualStickCommands(0.5f,0.5f,0.5f);
-        /*
-        ControlApi.getApi(this.drone).turnTo(30, 1.0f, true, new SimpleCommandListener() {
+        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED);
+
+        msg_rc_channels_override rc_override;
+        rc_override = new msg_rc_channels_override();
+        rc_override.chan4_raw = 2000; //right; 2000 //left
+       // rc_override.chan3_raw = 1000; //back; 2000 //forward
+        rc_override.target_system = 0;
+        rc_override.target_component = 0;
+
+
+        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+
+    }
+    protected void test2() {
+
+       /* ControlApi.getApi(this.drone).turnTo(angle, cw, true, new SimpleCommandListener() {
             public void onSuccess() {
                 alertUser("회전완료...");
             }
@@ -1127,23 +1137,18 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 alertUser("timeout.");
             }
         });*/
-    }
-    protected void test2() {
+        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED);
 
-        ControlApi.getApi(this.drone).turnTo(angle, cw, true, new SimpleCommandListener() {
-            public void onSuccess() {
-                alertUser("회전완료...");
-            }
-            @Override
-            public void onError(int i) {
-                alertUser("Unable .");
-            }
+        msg_rc_channels_override rc_override;
+        rc_override = new msg_rc_channels_override();
+        rc_override.chan4_raw = 1000; //right; 2000 //left
+       // rc_override.chan3_raw = 2000; //back; 2000 //forward
+        rc_override.target_system = 0;
+        rc_override.target_component = 0;
 
-            @Override
-            public void onTimeout() {
-                alertUser("timeout.");
-            }
-        });
+
+        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
 
     }
     //값설정

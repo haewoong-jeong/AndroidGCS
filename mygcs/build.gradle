@@ -46,4 +46,5 @@ dependencies {
     implementation project(':ClientLib')
 
     implementation 'com.google.maps.android:android-maps-utils:0.5'
+    compile project(path: ':Mavlink')
 }

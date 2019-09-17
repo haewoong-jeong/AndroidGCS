@@ -449,14 +449,14 @@
         android:text="yaw회전" />
 
     <Button
-        android:id="@+id/rc_test.btn"
+        android:id="@+id/rc_test_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignBottom="@+id/map"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="198dp"
         android:layout_toStartOf="@+id/rc_stop_btn"
-        android:visibility="invisible"
+        android:visibility="visible"
         android:text="cw" />
 
     <Button
