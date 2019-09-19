@@ -133,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     //test boolean
     boolean ch = true;
     boolean ch1 = true;
+    boolean ch2 = true;
     private int count_test=0;
     private float angle = 30;
     private float cw =1.0f;
@@ -450,9 +451,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             ControlApi.getApi(this.drone).takeoff((double)count, new AbstractCommandListener() {
 
                 @Override
-                public void onSuccess() {
-                    alertUser("Taking off...");
-                }
+                public void onSuccess() { alertUser("Taking off...");  }
 
                 @Override
                 public void onError(int i) {
@@ -1107,23 +1106,49 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     //yaw_rc_test
     protected void test() {
 
-        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED);
+        Button btn = (Button) findViewById(R.id.rc_test_btn);
+        if(ch2==true){
+            ch2 = false;
+            btn.setText("move");
 
         msg_rc_channels_override rc_override;
         rc_override = new msg_rc_channels_override();
-        rc_override.chan4_raw = 2000; //right; 2000 //left
-       // rc_override.chan3_raw = 1000; //back; 2000 //forward
+        rc_override.chan4_raw = 1500;
+        rc_override.chan3_raw = 1500;
+        rc_override.chan2_raw = 1500;
+        rc_override.chan1_raw = 1500;
         rc_override.target_system = 0;
         rc_override.target_component = 0;
 
 
         ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        Toast.makeText(getApplicationContext(), "호버링중", Toast.LENGTH_SHORT).show();
 
+        }
+        else if(ch2==false)
+        {
+            ch2 = true;
+            btn.setText("호버링");
+
+
+            msg_rc_channels_override rc_override;
+            rc_override = new msg_rc_channels_override();
+            rc_override.chan4_raw = 1500;
+            rc_override.chan3_raw = 1500;
+            rc_override.chan2_raw = 900;
+            rc_override.chan1_raw = 1500;
+            rc_override.target_system = 0;
+            rc_override.target_component = 0;
+
+
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+            Toast.makeText(getApplicationContext(), "떨어진다~~~~.", Toast.LENGTH_SHORT).show();
+        }
 
     }
     protected void test2() {
 
-       /* ControlApi.getApi(this.drone).turnTo(angle, cw, true, new SimpleCommandListener() {
+        ControlApi.getApi(this.drone).turnTo(angle, cw, true, new SimpleCommandListener() {
             public void onSuccess() {
                 alertUser("회전완료...");
             }
@@ -1136,18 +1161,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             public void onTimeout() {
                 alertUser("timeout.");
             }
-        });*/
-        VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED);
-
-        msg_rc_channels_override rc_override;
-        rc_override = new msg_rc_channels_override();
-        rc_override.chan4_raw = 1000; //right; 2000 //left
-       // rc_override.chan3_raw = 2000; //back; 2000 //forward
-        rc_override.target_system = 0;
-        rc_override.target_component = 0;
-
-
-        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        });
 
 
     }

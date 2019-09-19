@@ -457,7 +457,7 @@
         android:layout_marginBottom="198dp"
         android:layout_toStartOf="@+id/rc_stop_btn"
         android:visibility="visible"
-        android:text="cw" />
+        android:text="호버링" />
 
     <Button
         android:id="@+id/cw_ccw_btn"
