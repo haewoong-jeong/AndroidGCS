@@ -701,11 +701,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         nMap.setMapType(NaverMap.MapType.Satellite);
 
         statebutton.setText("위성지도");
-
-        OverlayImage image = OverlayImage.fromResource(R.drawable.middle_finger);
-        drone_marker.setIcon(image);
-        drone_marker.setWidth(150);
-        drone_marker.setHeight(150);
     }
 
     //고도변경
@@ -1011,27 +1006,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         builder.show();
     }
 
-
-    /*public void mis_set(){
-        MissionApi.getApi(this.drone).setMission(mis, true);
-    }
-    public void mis_start(){
-
-        VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_AUTO , new SimpleCommandListener(){
-            public void onSuccess() {
-                alertUser("미션시작");
-            }
-        });
-}
-    public void mis_stop(){
-        VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_LOITER , new SimpleCommandListener(){
-            public void onSuccess() {
-                alertUser("미션중지");
-            }
-        });
-    }*/
-
-    private void missionbtn(View view) {
+    public void missionbtn(View view) {
         Button mission = (Button) findViewById(R.id.mission_sent_btn);
 
         if (count1 == 0) {
@@ -1233,7 +1208,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         builder.show();
     }
 
-    private void cw_select(View view) {
+    public void cw_select(View view) {
 
         final EditText edittext = new EditText(this);
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
