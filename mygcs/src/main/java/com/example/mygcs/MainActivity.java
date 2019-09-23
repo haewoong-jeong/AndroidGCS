@@ -2,6 +2,7 @@ package com.example.mygcs;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -945,8 +946,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         Button area = (Button) findViewById(R.id.Area_Monitoring_btn);
         Button mission = (Button) findViewById(R.id.mission_sent_btn);
         mission.setVisibility(View.INVISIBLE);
+        Intent intent = new Intent(getApplicationContext(), SubActivity.class);
+        startActivity(intent);
         count2 = 4;
-        statemodebutton.setText("면적감시");
+        statemodebutton.setText("CAM");
     }
 
     public void set_mis_text() {

@@ -398,7 +398,7 @@
         android:layout_marginBottom="150dp"
         android:layout_toEndOf="@+id/interval_monitoring_btn"
         android:onClick="AreamodeButton"
-        android:text="면적감시"
+        android:text="cam"
         android:visibility="invisible" />
 
     <Button
