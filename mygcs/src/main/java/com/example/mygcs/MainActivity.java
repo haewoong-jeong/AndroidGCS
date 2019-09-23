@@ -29,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.MAVLink.common.msg_rc_channels_override;
 import com.google.maps.android.SphericalUtil;
 import com.naver.maps.geometry.LatLng;
 import com.naver.maps.geometry.LatLngBounds;
@@ -47,6 +48,7 @@ import com.naver.maps.map.util.FusedLocationSource;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.ExperimentalApi;
 import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
@@ -71,6 +73,7 @@ import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.Type;
 import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
+import com.o3dr.services.android.lib.mavlink.MavlinkMessageWrapper;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.ICommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
@@ -78,6 +81,7 @@ import com.o3dr.services.android.lib.util.MathUtils;
 
 import org.droidplanner.services.android.impl.core.MAVLink.MavLinkCommands;
 import org.droidplanner.services.android.impl.core.drone.autopilot.MavLinkDrone;
+
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -93,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     MapFragment mNaverMapFragment = null;
     private Drone drone;
-    private MavLinkDrone drone2;
     private int droneType = Type.TYPE_UNKNOWN;
     private ControlTower controlTower;
     private final Handler handler = new Handler();
@@ -101,21 +104,16 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private Marker drone_marker = new Marker();
     private Marker my_pos = new Marker();
     private Marker map_marker = new Marker();
-    private Marker map_marker2 = new Marker();
     private Marker A_marker = new Marker();
     private Marker B_marker = new Marker();
     private Marker C_marker = new Marker();
     private Marker D_marker = new Marker();
     private PolylineOverlay polyline = new PolylineOverlay();
-    private final InfoWindow location = new InfoWindow();
     private LatLng la1, la2;
     private List<LatLng> Map_point = new ArrayList<>();
-    private List<Waypoint> wayp = new ArrayList<>();
-    private LatLongAlt coordinate;
     private Mission mis = new Mission();
 
     private PolylineOverlay Mapclic2_polyline = new PolylineOverlay();
-
 
     ArrayList Line = new ArrayList();
     private int count = 3;
@@ -135,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     //test boolean
     boolean ch = true;
     boolean ch1 = true;
+    boolean ch2 = true;
     private int count_test = 0;
     private float angle = 30;
     private float cw = 1.0f;
@@ -236,6 +235,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
 
     }
+
     public void testMethod() {
         nMap.setMapType(NaverMap.MapType.Satellite);
     }
@@ -351,6 +351,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
         }
     }
+
     private void hideUI() {
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -1030,7 +1031,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
     }*/
 
-    public void missionbtn(View view) {
+    private void missionbtn(View view) {
         Button mission = (Button) findViewById(R.id.mission_sent_btn);
 
         if (count1 == 0) {
@@ -1060,12 +1061,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
 
     //LatLong, LatLng 변환함수
-    public LatLong change_LatLong(LatLng a) {
+    private LatLong change_LatLong(LatLng a) {
         LatLong Long = new LatLong(a.latitude, a.longitude);
         return Long;
     }
 
-    public LatLng change_LatLng(LatLong a) {
+    private LatLng change_LatLng(LatLong a) {
         double Lat = a.getLatitude();
         double Long = a.getLongitude();
         LatLng new_Lng = new LatLng(Lat, Long);
@@ -1146,6 +1147,43 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     //yaw_rc_test
     protected void test() {
+        Button btn = (Button) findViewById(R.id.rc_test_btn);
+        if (ch2 == true) {
+            ch2 = false;
+            btn.setText("move");
+
+            msg_rc_channels_override rc_override;
+            rc_override = new msg_rc_channels_override();
+            rc_override.chan4_raw = 1500;
+            rc_override.chan3_raw = 1500;
+            rc_override.chan2_raw = 1500;
+            rc_override.chan1_raw = 1500;
+            rc_override.target_system = 0;
+            rc_override.target_component = 0;
+
+
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+            Toast.makeText(getApplicationContext(), "호버링중", Toast.LENGTH_SHORT).show();
+
+        } else if (ch2 == false) {
+            ch2 = true;
+            btn.setText("호버링");
+
+
+            msg_rc_channels_override rc_override;
+            rc_override = new msg_rc_channels_override();
+            rc_override.chan4_raw = 1500;
+            rc_override.chan3_raw = 1500;
+            rc_override.chan2_raw = 900;
+            rc_override.chan1_raw = 1500;
+            rc_override.target_system = 0;
+            rc_override.target_component = 0;
+
+
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+            Toast.makeText(getApplicationContext(), "떨어진다~~~~.", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     protected void test2() {
@@ -1195,7 +1233,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         builder.show();
     }
 
-    public void cw_select(View view) {
+    private void cw_select(View view) {
 
         final EditText edittext = new EditText(this);
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -1221,47 +1259,5 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     }
                 });
         builder.show();
-    }
-
-    public void enableVirtualStick() {
-        if (this.drone.isConnected()) {
-            ControlApi.getApi(this.drone).enableManualControl(true, new ControlApi.ManualControlStateListener() {
-                @Override
-                public void onManualControlToggled(boolean isEnabled) {
-                    if (isEnabled) {
-                        alertUser("Joystick Mode Enabled");
-                    } else {
-                        alertUser("Could not enable Joystick Mode");
-                    }
-                }
-            });
-        } else {
-            alertUser("No Vehicle is connected");
-        }
-    }
-
-    public void sendVirtualStickCommands(float pitch_val, float roll_val, float throttle_val) {
-
-
-        ControlApi.getApi(this.drone).manualControl(pitch_val, roll_val, throttle_val, new AbstractCommandListener() {
-            @Override
-            public void onSuccess() {
-                Log.d("mycheck", "성공입니다.");
-                //alertUser("Joystick command accepted by vehicle");
-            }
-
-            @Override
-            public void onError(int i) {
-                Log.d("mycheck", "에러입니다");
-                //alertUser("Error in Joystick");
-            }
-
-            @Override
-            public void onTimeout() {
-                Log.d("mycheck", "타임아웃입니다");
-                //alertUser("Joystick command timed out");
-            }
-
-        });
     }
 }
