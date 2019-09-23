@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
     private FusedLocationSource locationSource;
+    
 
     MapFragment mNaverMapFragment = null;
     private Drone drone;
@@ -111,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private Mission mis = new Mission();
 
     private PolylineOverlay Mapclic2_polyline = new PolylineOverlay();
+
 
     ArrayList Line = new ArrayList();
     private int count = 3;
