@@ -17,7 +17,9 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -35,6 +37,7 @@ import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapFragment;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
+import com.naver.maps.map.UiSettings;
 import com.naver.maps.map.overlay.GroundOverlay;
 import com.naver.maps.map.overlay.InfoWindow;
 import com.naver.maps.map.overlay.Marker;
@@ -145,6 +148,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "Start mainActivity");
         super.onCreate(savedInstanceState);
+        hideUI();
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
 
@@ -231,7 +236,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
 
     }
-
     public void testMethod() {
         nMap.setMapType(NaverMap.MapType.Satellite);
     }
@@ -254,6 +258,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         naverMap.setMapType(NaverMap.MapType.Basic);
         Gps test = this.drone.getAttribute(AttributeType.GPS);
         nMap = naverMap;
+        UiSettings uiSettings = naverMap.getUiSettings();
+
+        uiSettings.setZoomControlEnabled(false);
     }
 
     @Override
@@ -343,6 +350,16 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 // Log.i("DRONE_EVENT", event); //Uncomment to see events from the drone
                 break;
         }
+    }
+    private void hideUI() {
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LOW_PROFILE
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE
+        );
     }
 
     //지적도
