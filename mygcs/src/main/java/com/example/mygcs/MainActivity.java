@@ -141,17 +141,21 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "Start mainActivity");
         super.onCreate(savedInstanceState);
+        //상태창 제거 및 풀스크린
         hideUI();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
 
+        //내위치
         locationSource = new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
 
         final Context context = getApplicationContext();
         this.controlTower = new ControlTower(context);
         this.drone = new Drone(context);
 
+
+        //모드변경 스피너
         this.modeSelector = (Spinner) findViewById(R.id.modeSelect);
         this.modeSelector.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
             @Override
@@ -167,6 +171,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             }
         });
 
+        //지도표시
         FragmentManager fm = getSupportFragmentManager();
         mNaverMapFragment = (MapFragment) fm.findFragmentById(R.id.map);
         if (mNaverMapFragment == null) {
@@ -174,24 +179,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             fm.beginTransaction().add(R.id.map, mNaverMapFragment).commit();
         }
         mNaverMapFragment.getMapAsync(this);
-
-
-        Button btn = findViewById(R.id.rc_test_btn);
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                test();
-            }
-        });
-
-        Button btn2 = findViewById(R.id.rc_stop_btn);
-        btn2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                test2();
-            }
-        });
-
     }
 
     public void testMethod() {
@@ -214,7 +201,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
 
         naverMap.setMapType(NaverMap.MapType.Basic);
-        Gps test = this.drone.getAttribute(AttributeType.GPS);
         nMap = naverMap;
         UiSettings uiSettings = naverMap.getUiSettings();
 
@@ -248,7 +234,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 updateConnectedButton(this.drone.isConnected());
                 updateArmButton();
                 break;
-
             case AttributeEvent.STATE_DISCONNECTED:
                 alertUser("Drone Disconnected");
                 updateConnectedButton(this.drone.isConnected());
@@ -258,7 +243,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             case AttributeEvent.STATE_ARMING:
                 updateArmButton();
                 break;
-
             case AttributeEvent.TYPE_UPDATED:
                 Type newDroneType = this.drone.getAttribute(AttributeType.TYPE);
                 if (newDroneType.getDroneType() != this.droneType) {
@@ -268,8 +252,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
             case AttributeEvent.GPS_POSITION:
                 marker();
-                camera();
-                line();
                 break;
             case AttributeEvent.BATTERY_UPDATED:
                 updateVoltage();
@@ -291,17 +273,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
             case AttributeEvent.GUIDED_POINT_UPDATED:
                 Map_Click();
-
                 break;
             case AttributeEvent.MISSION_SENT:
                 set_mis_text();
-
-
             case AttributeEvent.HOME_UPDATED:
                 updateDistanceFromHome();
                 break;
-
-
             default:
                 // Log.i("DRONE_EVENT", event); //Uncomment to see events from the drone
                 break;
@@ -379,7 +356,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 ShowAltitude();
             }
         });
-
 
         ///////////////////////////////////모드변경//////////////////////////////////////////////
         BtnModeState.setOnClickListener(new Button.OnClickListener() {
@@ -547,7 +523,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
 
     }
-    ////////////////////UI/////////////////////////////////////////////
 
     private void hideUI() {
         getWindow().getDecorView().setSystemUiVisibility(
@@ -559,25 +534,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                         | View.SYSTEM_UI_FLAG_IMMERSIVE
         );
     }
-
     //고도값출력
     private void ShowAltitude() {
         Button BtnAltitudeValue = (Button) findViewById(R.id.Altitude_Val);
         BtnAltitudeValue.setText(String.format("고도  %dM", TakeoffAltitude));
     }
-
-    //맵잠금
-    protected void camera() {
-        Gps Drone_GPS = this.drone.getAttribute(AttributeType.GPS);
-        LatLng Drone_Coordinates = new LatLng(Drone_GPS.getPosition().getLatitude(), Drone_GPS.getPosition().getLongitude());
-        if (Map_move_rock_bool == true) {
-            CameraUpdate cameraUpdate = CameraUpdate.scrollTo(Drone_Coordinates);
-            nMap.moveCamera(cameraUpdate);
-        } else if (Map_move_rock_bool == false) {
-            nMap.moveCamera(null);
-        }
-    }
-
+    ////////////////////UI/////////////////////////////////////////////
 
     //ARM
     public void onArmButtonTap(View view) {
@@ -660,23 +622,63 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     //드론마커표시및방향
     protected void marker() {
+        Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
+        LatLng droneCoordinates = new LatLng(droneGps.getPosition().getLatitude(), droneGps.getPosition().getLongitude());
         OverlayImage image = OverlayImage.fromResource(R.drawable.circled_chevron_up_100px);
-        Gps test = this.drone.getAttribute(AttributeType.GPS);
-        LatLng knu = new LatLng(test.getPosition().getLatitude(), test.getPosition().getLongitude());
-        Attitude Marker_Yaw = this.drone.getAttribute(AttributeType.ATTITUDE);
-        int int_Yaw = (int) Marker_Yaw.getYaw();
-        drone_marker.setPosition(knu);
+        drone_marker.setPosition(droneCoordinates);
         drone_marker.setMap(nMap);
         drone_marker.setIcon(image);
         drone_marker.setWidth(150);
         drone_marker.setHeight(150);
         drone_marker.setAnchor(new PointF(0.5f, 0.5f));
 
+        //드론회전시 마커회전
+        Attitude Marker_Yaw = this.drone.getAttribute(AttributeType.ATTITUDE);
+        int int_Yaw = (int) Marker_Yaw.getYaw();
         if (int_Yaw > -180 || int_Yaw < 0) {
             int_Yaw = 360 + int_Yaw;
         }
         drone_marker.setAngle(int_Yaw);
+
+        //드론마커위치 맵잠금
+        if (Map_move_rock_bool == true) {
+            CameraUpdate cameraUpdate = CameraUpdate.scrollTo(droneCoordinates);
+            nMap.moveCamera(cameraUpdate);
+        } else if (Map_move_rock_bool == false) {
+            nMap.moveCamera(null);
+        }
+
+        //드론 궤적
+        Line.add(droneCoordinates);
+        polyline.setCoords(Line);
+        polyline.setWidth(10);
+        polyline.setColor(Color.RED);
+        polyline.setJoinType(PolylineOverlay.LineJoin.Round);
+        polyline.setMap(nMap);
     }
+    //드론 궤적
+   /* protected void line() {
+        Gps drone_Gps = this.drone.getAttribute(AttributeType.GPS);
+        LatLng droneCoordinates = new LatLng(drone_Gps.getPosition().getLatitude(), drone_Gps.getPosition().getLongitude());
+
+        Line.add(drone);
+        polyline.setCoords(Line);
+        polyline.setWidth(10);
+        polyline.setColor(Color.RED);
+        polyline.setJoinType(PolylineOverlay.LineJoin.Round);
+        polyline.setMap(nMap);
+    }*/
+    //맵잠금
+    /*protected void camera() {
+        Gps Drone_GPS = this.drone.getAttribute(AttributeType.GPS);
+        LatLng Drone_Coordinates = new LatLng(Drone_GPS.getPosition().getLatitude(), Drone_GPS.getPosition().getLongitude());
+        if (Map_move_rock_bool == true) {
+            CameraUpdate cameraUpdate = CameraUpdate.scrollTo(Drone_Coordinates);
+            nMap.moveCamera(cameraUpdate);
+        } else if (Map_move_rock_bool == false) {
+            nMap.moveCamera(null);
+        }
+    }*/
 
     ////////////////////앱 상단 인터페이스/////////////////////////////////////////
 
@@ -788,11 +790,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         distanceTextView.setText(String.format("%3.1f", distanceFromHome) + "m");
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
+
+    //////////////////////////// RC TEST LINE//////////////////////////////////
 
     //yaw_rc_test
-    protected void test() {
+    public void test(View view) {
         Button btn = (Button) findViewById(R.id.rc_test_btn);
         if (ch2 == true) {
             ch2 = false;
@@ -806,7 +810,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             rc_override.chan1_raw = 1500;
             rc_override.target_system = 0;
             rc_override.target_component = 0;
-
 
             ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
             Toast.makeText(getApplicationContext(), "호버링중", Toast.LENGTH_SHORT).show();
@@ -831,8 +834,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
 
     }
-
-    protected void test2() {
+    public void test2(View view) {
 
         ControlApi.getApi(this.drone).turnTo(angle, cw, true, new SimpleCommandListener() {
             public void onSuccess() {
@@ -852,29 +854,15 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     }
 
-
-    //드론 궤적
-    protected void line() {
-        Gps drone_Gps = this.drone.getAttribute(AttributeType.GPS);
-        LatLng drone = new LatLng(drone_Gps.getPosition().getLatitude(), drone_Gps.getPosition().getLongitude());
-
-        Line.add(drone);
-        polyline.setCoords(Line);
-        polyline.setWidth(10);
-        polyline.setColor(Color.RED);
-        polyline.setJoinType(PolylineOverlay.LineJoin.Round);
-        polyline.setMap(nMap);
-    }
-
-    /////////////가이드모드///////////////////////////////////////////////////////
+    /////////////가이드모드/////////////////////////////////////////////////////
 
     protected void Map_Click() {
         nMap.setOnMapLongClickListener((point, coord) -> {
 
             if (MyModeState == My_Type.BASIC_MODE) {
-                LatLng la = coord;
+                LatLng guide_co = coord;
                 OverlayImage image = OverlayImage.fromResource(R.drawable.filled_flag_2_40px);
-                map_marker.setPosition(la);
+                map_marker.setPosition(guide_co);
                 map_marker.setMap(nMap);
                 map_marker.setIcon(image);
                 map_marker.setWidth(70);
@@ -1160,6 +1148,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         LatLng new_Lng = new LatLng(Lat, Long);
         return new_Lng;
     }
+
+
+    /////////////////건든적없는코드/////////////////////////////////
 
 
     @Override

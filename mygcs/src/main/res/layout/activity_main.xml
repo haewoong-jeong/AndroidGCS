@@ -345,10 +345,7 @@
         android:layout_marginBottom="43dp"
 
         android:text="임무전송"
-        android:visibility="invisible"
-        android:onClick="missionbtn"
-
-        />
+        android:visibility="invisible" />
 
     <Button
         android:id="@+id/mode_btn"
@@ -427,7 +424,7 @@
         android:layout_alignBottom="@+id/map"
         android:layout_marginEnd="21dp"
         android:layout_marginBottom="196dp"
-
+        android:onClick="test2"
         android:text="yaw회전" />
 
     <Button
@@ -439,7 +436,8 @@
         android:layout_marginBottom="198dp"
         android:layout_toStartOf="@+id/rc_stop_btn"
         android:visibility="visible"
-        android:text="cw" />
+        android:onClick="test"
+        android:text="RC이동" />
 
     <Button
         android:id="@+id/cw_ccw_btn"
