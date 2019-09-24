@@ -254,7 +254,7 @@
         android:layout_marginEnd="103dp"
         android:layout_marginBottom="15dp"
         android:text="지적도on"
-        android:onClick="cadastral"/>
+        />
 
     <Button
         android:id="@+id/line_clear"
@@ -265,7 +265,7 @@
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="15dp"
         android:text="CLEAR"
-        android:onClick="lineClear"/>
+        />
 
     <Button
         android:id="@+id/basicMapbutton"
@@ -309,7 +309,6 @@
         android:layout_marginStart="25dp"
         android:layout_marginBottom="97dp"
         android:background="#AA00FF00"
-        android:onClick="Altitude_val"
         android:text="고도 3M" />
 
     <Button
@@ -321,7 +320,6 @@
         android:layout_marginStart="80dp"
         android:layout_marginBottom="98dp"
         android:background="#AA00FF00"
-        android:onClick="Altitude_up"
         android:text="▲"
         android:textSize="25dp" />
 
@@ -334,7 +332,6 @@
         android:layout_marginStart="117dp"
         android:layout_marginBottom="96dp"
         android:background="#AA00FF00"
-        android:onClick="Altitude_down"
         android:text="▼"
         android:textSize="25dp" />
 
@@ -361,7 +358,7 @@
         android:layout_alignBottom="@+id/map"
         android:layout_marginStart="6dp"
         android:layout_marginBottom="148dp"
-        android:onClick="modeButton"
+
         android:text="일반모드"
         android:visibility="visible" />
 
@@ -374,7 +371,6 @@
         android:layout_marginStart="72dp"
         android:layout_marginBottom="148dp"
         android:text="일반모드"
-        android:onClick="basicmodeButton"
         android:visibility="invisible"/>
 
     <Button
@@ -385,20 +381,7 @@
         android:layout_marginStart="1dp"
         android:layout_marginBottom="148dp"
         android:layout_toEndOf="@+id/route_flight_mode_btn"
-        android:onClick="intervalmodeButton"
         android:text="간격감시"
-        android:visibility="invisible" />
-
-    <Button
-        android:id="@+id/Area_Monitoring_btn"
-        android:layout_width="60dp"
-        android:layout_height="59dp"
-        android:layout_alignBottom="@+id/map"
-        android:layout_marginStart="2dp"
-        android:layout_marginBottom="150dp"
-        android:layout_toEndOf="@+id/interval_monitoring_btn"
-        android:onClick="AreamodeButton"
-        android:text="cam"
         android:visibility="invisible" />
 
     <Button
@@ -409,9 +392,8 @@
         android:layout_alignBottom="@+id/map"
         android:layout_marginStart="130dp"
         android:layout_marginBottom="148dp"
-        android:text="경로비행"
-        android:onClick="routeodeButton"
-        android:visibility="invisible"/>
+        android:text="cam"
+        android:visibility="invisible" />
 
     <Button
         android:id="@+id/test_btn"
