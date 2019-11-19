@@ -11,7 +11,7 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 
 public class SubActivity extends AppCompatActivity {
-    private WebView mwv;
+    private WebView RaspberryStream;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,25 +20,26 @@ public class SubActivity extends AppCompatActivity {
         hideUI();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        mwv = (WebView) findViewById(R.id.webView);
+        //원하는 웹사이트를 앱에 띄우기위해 WebView 프레임 사용 및 설정
+        RaspberryStream = (WebView) findViewById(R.id.webView1);
 
-        WebSettings mws = mwv.getSettings();//Mobile Web Setting
-        mws.setJavaScriptEnabled(true);//자바스크립트 허용
-        mws.setLoadWithOverviewMode(true);//컨텐츠가 웹뷰보다 클 경우 스크린 크기에 맞게 조정
+        WebSettings streamingSet = RaspberryStream.getSettings();//Mobile Web Setting
+        streamingSet.setJavaScriptEnabled(true);//자바스크립트 허용
+        streamingSet.setLoadWithOverviewMode(true);//컨텐츠가 웹뷰보다 클 경우 스크린 크기에 맞게 조정
 
-        mws.setBuiltInZoomControls(false);
-        mws.setJavaScriptEnabled(true);
-        mws.setUseWideViewPort(true);
+        streamingSet.setBuiltInZoomControls(false);
+        streamingSet.setUseWideViewPort(true);
 
-        mwv.setWebViewClient(new WebViewClient() {
+        RaspberryStream.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 view.loadUrl(url);
                 return true;
             }
         });
-        mwv.loadUrl("http://192.168.0.14:7010/?action=stream");
+        RaspberryStream.loadUrl("http://192.168.0.14:7010/?action=stream");
 
+        //MainActivity로 돌아가기
         Button btn_back = (Button) findViewById(R.id.btn_back);
         btn_back.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -47,6 +48,7 @@ public class SubActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
     }
     private void hideUI() {
         getWindow().getDecorView().setSystemUiVisibility(

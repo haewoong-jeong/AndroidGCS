@@ -10,7 +10,6 @@
         android:id="@+id/map"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
     </FrameLayout>
 
     <TableRow
@@ -202,6 +201,30 @@
     </TableRow>
 
 
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="29dp"
+        android:visibility="invisible">
+
+    </WebView>
+
+    <Button
+        android:id="@+id/btn_back_X"
+        android:layout_width="47dp"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/VideoControlView"
+        android:layout_alignTop="@+id/VideoControlView"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="32dp"
+        android:background="#55c0c0c0"
+        android:text="X"
+        android:visibility="invisible" />
+
     <Button
         android:id="@+id/btnConnect"
         android:layout_width="wrap_content"
@@ -343,7 +366,7 @@
         android:layout_alignBottom="@+id/map"
         android:layout_marginStart="16dp"
         android:layout_marginBottom="43dp"
-
+        android:onClick="missionbtn"
         android:text="임무전송"
         android:visibility="invisible" />
 
@@ -416,49 +439,58 @@
         android:visibility="invisible"
         android:onClick="select2"/>
 
-    <Button
-        android:id="@+id/rc_stop_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignEnd="@+id/map"
-        android:layout_alignBottom="@+id/map"
-        android:layout_marginEnd="21dp"
-        android:layout_marginBottom="196dp"
-        android:onClick="test2"
-        android:text="yaw회전" />
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="138dp"
+        android:layout_height="63dp"
+        android:layout_below="@+id/connect"
+        android:layout_alignEnd="@+id/VideoControlView"
+        android:layout_marginTop="-1dp"
+        android:layout_marginEnd="5dp"
+        android:text="waiting"
+        android:textColor="#FF0000"
+        android:textSize="30dp" />
 
     <Button
-        android:id="@+id/rc_test.btn"
+        android:id="@+id/connect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/map"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="198dp"
-        android:layout_toStartOf="@+id/rc_stop_btn"
-        android:visibility="visible"
-        android:onClick="test"
-        android:text="RC이동" />
+        android:layout_below="@+id/btnConnect"
+        android:layout_alignEnd="@+id/webView"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="23dp"
+        android:text="socket" />
 
-    <Button
-        android:id="@+id/cw_ccw_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignEnd="@+id/map"
-        android:layout_alignBottom="@+id/map"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="140dp"
-        android:text="cw_ccw"
-        android:onClick="cw_select"/>
+    <RelativeLayout
+        android:id="@+id/VideoControlView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="invisible">
 
-    <Button
-        android:id="@+id/test_angle_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignEnd="@+id/map"
-        android:layout_alignBottom="@+id/map"
-        android:layout_marginEnd="114dp"
-        android:layout_marginBottom="141dp"
-        android:text="angle"
-        android:onClick="angle_select"/>
+        <RelativeLayout
+            android:id="@+id/layout_joystick"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="40dp"
+            android:layout_marginBottom="40dp"
+            android:background="@drawable/image_button_bg">
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/layout_joystick2"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginRight="40dp"
+            android:layout_marginBottom="40dp"
+            android:background="@drawable/image_button_bg">
+
+        </RelativeLayout>
+
+    </RelativeLayout>
 
 </RelativeLayout>

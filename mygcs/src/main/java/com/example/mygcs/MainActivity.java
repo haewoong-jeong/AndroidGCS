@@ -21,10 +21,14 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -84,7 +88,12 @@ import org.droidplanner.services.android.impl.core.MAVLink.MavLinkCommands;
 import org.droidplanner.services.android.impl.core.drone.autopilot.MavLinkDrone;
 
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -116,7 +125,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private PolylineOverlay polyline = new PolylineOverlay();
     private LatLng la1, la2;
     private List<LatLng> Map_point = new ArrayList<>();
-    private Mission mis = new Mission();
+    private Mission IntervalMission = new Mission();
+    private WebView RaspberryStream;
 
     private PolylineOverlay Mapclic2_polyline = new PolylineOverlay();
 
@@ -124,11 +134,26 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private int TakeoffAltitude = 3;
     private boolean marker_count = true;
     private int dis = 50;
-    private int rksrur = 5;
+    private int Interval = 5;
+    private int count1 = 0;
 
     boolean Map_move_rock_bool = true;
     boolean Canstral_bool = true;
-    boolean your_name = true;
+    boolean Interval_bool = true;
+
+    //조이스틱 조작시 드론의 속도
+    double speedYaw =1.25;
+    double speedUpDown = 1.5;
+    double speedMove = 1.25;
+
+    int cameraType = 0;
+
+    //rc컨트롤러
+    msg_rc_channels_override rc_override;
+
+    //조이스틱
+    RelativeLayout layout_Leftjoystick,layout_Rightjoystick;
+    JoyStickClass jstickLeft,jstickRight;
 
     //test boolean
     boolean ch2 = true;
@@ -137,10 +162,22 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     private Spinner modeSelector;
 
+    ///소켓통신변수
+
+    private Socket socket;  //소켓생성
+    BufferedReader in;      //서버로부터 온 데이터를 읽는다.
+    TextView output;        //화면구성
+    String data;
+    String data2;
+    char data3[] = new char[6];
+    int rc_mode_change= 0;
+    boolean socket_bool = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "Start mainActivity");
         super.onCreate(savedInstanceState);
+
         //상태창 제거 및 풀스크린
         hideUI();
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -153,7 +190,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         final Context context = getApplicationContext();
         this.controlTower = new ControlTower(context);
         this.drone = new Drone(context);
-
 
         //모드변경 스피너
         this.modeSelector = (Spinner) findViewById(R.id.modeSelect);
@@ -179,10 +215,36 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             fm.beginTransaction().add(R.id.map, mNaverMapFragment).commit();
         }
         mNaverMapFragment.getMapAsync(this);
-    }
 
-    public void testMethod() {
-        nMap.setMapType(NaverMap.MapType.Satellite);
+        RaspberryStream = (WebView) findViewById(R.id.webView);
+
+        WebSettings streamingSet = RaspberryStream.getSettings();//Mobile Web Setting
+        streamingSet.setJavaScriptEnabled(true);//자바스크립트 허용
+        streamingSet.setLoadWithOverviewMode(true);//컨텐츠가 웹뷰보다 클 경우 스크린 크기에 맞게 조정
+
+        streamingSet.setBuiltInZoomControls(false);
+        streamingSet.setUseWideViewPort(true);
+
+        RaspberryStream.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                view.loadUrl(url);
+                return true;
+            }
+        });
+        RaspberryStream.loadUrl("http://192.168.43.84:8080/?action=stream");
+
+
+        rc_override = new msg_rc_channels_override();
+        rc_override.chan4_raw = 1500;
+        rc_override.chan3_raw = 1500;
+        rc_override.chan2_raw = 1500;
+        rc_override.chan1_raw = 1500;
+        rc_override.target_system = 0;
+        rc_override.target_component = 0;
+
+        joystick();
+
     }
 
     @Override
@@ -196,15 +258,18 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
 
     public void onMapReady(@NonNull NaverMap naverMap) {
+        nMap = naverMap;
 
+        //핸드폰위치표시
         naverMap.setLocationSource(locationSource);
         naverMap.setLocationTrackingMode(LocationTrackingMode.Follow);
-
+        //기본지도표시
         naverMap.setMapType(NaverMap.MapType.Basic);
-        nMap = naverMap;
-        UiSettings uiSettings = naverMap.getUiSettings();
 
+        //줌버튼 제거
+        UiSettings uiSettings = naverMap.getUiSettings();
         uiSettings.setZoomControlEnabled(false);
+        //버튼이벤트
         my_btn_control();
     }
 
@@ -224,8 +289,14 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
         this.controlTower.unregisterDrone(this.drone);
         this.controlTower.disconnect();
+        try {
+            socket.close(); //소켓을 닫는다.
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-
+    // Drone Listener
+    // ==========================================================
     @Override
     public void onDroneEvent(String event, Bundle extras) {
         switch (event) {
@@ -285,10 +356,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
+
+    /////////////////////버튼 이벤트//////////////////////////////
     public void my_btn_control() {
         final Button BtnMapCadstral = (Button) findViewById(R.id.btn_cadastral);
         final Button BtnLineClear = (Button) findViewById(R.id.line_clear);
 
+        final Button armButton = (Button) findViewById(R.id.arm_button);
         final Button BtnMapMoveRock = (Button) findViewById(R.id.btn_map_move);
 
         final Button BtnMapTypeState = findViewById(R.id.mapbutton);
@@ -301,16 +375,60 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         final Button BtnModeCAM = (Button) findViewById(R.id.route_flight_mode_btn);
         final Button BtnModeState = (Button) findViewById(R.id.mode_btn);
 
-        final Button BtnMission = (Button) findViewById(R.id.mission_sent_btn);
+        Button BtnMission = (Button) findViewById(R.id.mission_sent_btn);
         final Button BtnSetDistance = (Button) findViewById(R.id.test_btn);
         final Button BtnSetInterval = (Button) findViewById(R.id.rksrur_btn);
 
         final Button BtnAltitudeValue = (Button) findViewById(R.id.Altitude_Val);
         final Button BtnAltitudeDown = (Button) findViewById(R.id.Altitude_down);
         final Button BtnAltitudeUp = (Button) findViewById(R.id.Altitude_up);
+        final WebView web = (WebView) findViewById(R.id.webView);
+
+        final Button BtnX = (Button) findViewById(R.id.btn_back_X);
+        final Button con = (Button) findViewById(R.id.connect);
+        final TextView output = (TextView) findViewById(R.id.textView2);
+
+
+        final RelativeLayout videocontrolview= findViewById(R.id.VideoControlView);
+        con.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(socket_bool ==false){socket_bool =true;}
+                else if(socket_bool ==true){socket_bool =false;}
+                    Thread worker = new Thread() {    //worker 를 Thread 로 생성
+                    public void run() { //스레드 실행구문
+                        try {
+                            //소켓을 생성하고 입출력 스트립을 소켓에 연결한다.
+                            socket = new Socket("192.168.43.84", 8888); //소켓생성
+
+                            in = new BufferedReader(new InputStreamReader(socket.getInputStream())); //데이터 수신시 stream을 받아들인다.
+                            while (socket_bool) {
+                                data = in.readLine(); // in으로 받은 데이타를 String 형태로 읽어 data 에 저장
+                                //in.read(data3,0,6);
+                                //data = String.valueOf(data3);
+                                output.setText(data);
+                                //Bdn.setText(data);
+                                Log.d("datav","데이터 : " + data);
+                                stack();
+
+                                //Log.d("datav2","데이터 : " + rc_mode_change);
+                                //rc_socket();
+
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                worker.start();
+            }
+        });
+
+
+
 
         //////////////////////////미션버튼///////////////////////////////////
-        BtnMission.setOnClickListener(new Button.OnClickListener() {
+        /*BtnMission.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (MyMissionState == My_Type.MISSION_WAIT) {
@@ -324,7 +442,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     BtnMission.setText("임무전송");
                 }
             }
-        });
+        });*/
 
         //////////////////TakeOff 고도 변경//////////////////
 
@@ -392,16 +510,57 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         BtnModeCAM.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 BtnMission.setVisibility(View.INVISIBLE);
                 BtnSetDistance.setVisibility(View.INVISIBLE);
                 BtnSetInterval.setVisibility(View.INVISIBLE);
                 BtnModeBasic.setVisibility(View.INVISIBLE);
                 BtnModeInterval.setVisibility(View.INVISIBLE);
                 BtnModeCAM.setVisibility(View.INVISIBLE);
-                Intent intent = new Intent(getApplicationContext(), SubActivity.class);
-                startActivity(intent);
+
+                BtnModeState.setVisibility(View.INVISIBLE);
+                armButton.setVisibility(View.INVISIBLE);
+
+
+                //버튼가리기
+
+                BtnAltitudeValue.setVisibility(View.INVISIBLE);
+                BtnAltitudeDown.setVisibility(View.INVISIBLE);
+                BtnAltitudeUp.setVisibility(View.INVISIBLE);
+
+                web.setVisibility(View.VISIBLE);
+                BtnX.setVisibility(View.VISIBLE);
+
+                BtnMapMoveRock.setVisibility(View.INVISIBLE);
+                BtnMapTypeState.setVisibility(View.INVISIBLE);
+                BtnMapCadstral.setVisibility(View.INVISIBLE);
+                BtnLineClear.setVisibility(View.INVISIBLE);
+
+                videocontrolview.setVisibility(View.VISIBLE);
+
+
+                /*Intent intent = new Intent(getApplicationContext(), SubActivity.class);
+                startActivity(intent);*/
                 MyModeState = My_Type.CAM_MODE;
                 BtnModeState.setText("CAM");
+            }
+        });
+        BtnX.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                web.setVisibility(View.INVISIBLE);
+                BtnX.setVisibility(View.INVISIBLE);
+                BtnAltitudeValue.setVisibility(View.VISIBLE);
+                BtnAltitudeDown.setVisibility(View.VISIBLE);
+                BtnAltitudeUp.setVisibility(View.VISIBLE);
+                BtnMapMoveRock.setVisibility(View.VISIBLE);
+                BtnMapTypeState.setVisibility(View.VISIBLE);
+                BtnMapCadstral.setVisibility(View.VISIBLE);
+                BtnLineClear.setVisibility(View.VISIBLE);
+                BtnModeState.setVisibility(View.VISIBLE);
+                armButton.setVisibility(View.VISIBLE);
+
+                videocontrolview.setVisibility(View.INVISIBLE);
             }
         });
         //간격감시모드
@@ -524,6 +683,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     }
 
+    //상태창제거
     private void hideUI() {
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -534,13 +694,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                         | View.SYSTEM_UI_FLAG_IMMERSIVE
         );
     }
-    //고도값출력
+    //takeoff고도값출력
     private void ShowAltitude() {
         Button BtnAltitudeValue = (Button) findViewById(R.id.Altitude_Val);
         BtnAltitudeValue.setText(String.format("고도  %dM", TakeoffAltitude));
     }
-    ////////////////////UI/////////////////////////////////////////////
-
     //ARM
     public void onArmButtonTap(View view) {
         State vehicleState = this.drone.getAttribute(AttributeType.STATE);
@@ -620,10 +778,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
 
 
+
+    ////////////////////앱 상단 UI 업데이트/////////////////////////////////
     //드론마커표시및방향
     protected void marker() {
         Gps droneGps = this.drone.getAttribute(AttributeType.GPS);
-        LatLng droneCoordinates = new LatLng(droneGps.getPosition().getLatitude(), droneGps.getPosition().getLongitude());
+        LatLng droneCoordinates =
+           new LatLng(droneGps.getPosition().getLatitude(), droneGps.getPosition().getLongitude());
         OverlayImage image = OverlayImage.fromResource(R.drawable.circled_chevron_up_100px);
         drone_marker.setPosition(droneCoordinates);
         drone_marker.setMap(nMap);
@@ -648,6 +809,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             nMap.moveCamera(null);
         }
 
+        //모드를바꾸면 간헐적으로 궤적이생성되지않음??원인이뭐지
         //드론 궤적
         Line.add(droneCoordinates);
         polyline.setCoords(Line);
@@ -656,31 +818,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         polyline.setJoinType(PolylineOverlay.LineJoin.Round);
         polyline.setMap(nMap);
     }
-    //드론 궤적
-   /* protected void line() {
-        Gps drone_Gps = this.drone.getAttribute(AttributeType.GPS);
-        LatLng droneCoordinates = new LatLng(drone_Gps.getPosition().getLatitude(), drone_Gps.getPosition().getLongitude());
-
-        Line.add(drone);
-        polyline.setCoords(Line);
-        polyline.setWidth(10);
-        polyline.setColor(Color.RED);
-        polyline.setJoinType(PolylineOverlay.LineJoin.Round);
-        polyline.setMap(nMap);
-    }*/
-    //맵잠금
-    /*protected void camera() {
-        Gps Drone_GPS = this.drone.getAttribute(AttributeType.GPS);
-        LatLng Drone_Coordinates = new LatLng(Drone_GPS.getPosition().getLatitude(), Drone_GPS.getPosition().getLongitude());
-        if (Map_move_rock_bool == true) {
-            CameraUpdate cameraUpdate = CameraUpdate.scrollTo(Drone_Coordinates);
-            nMap.moveCamera(cameraUpdate);
-        } else if (Map_move_rock_bool == false) {
-            nMap.moveCamera(null);
-        }
-    }*/
-
-    ////////////////////앱 상단 인터페이스/////////////////////////////////////////
 
     // 전압
     protected void updateVoltage() {
@@ -714,7 +851,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     protected void updateVehicleModesForType(int droneType) {
         List<VehicleMode> vehicleModes = VehicleMode.getVehicleModePerDroneType(droneType);
-        ArrayAdapter<VehicleMode> vehicleModeArrayAdapter = new ArrayAdapter<VehicleMode>(this, android.R.layout.simple_spinner_item, vehicleModes);
+        ArrayAdapter<VehicleMode> vehicleModeArrayAdapter =
+        new ArrayAdapter<VehicleMode>(this, android.R.layout.simple_spinner_item, vehicleModes);
         vehicleModeArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         this.modeSelector.setAdapter(vehicleModeArrayAdapter);
     }
@@ -795,9 +933,65 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     //////////////////////////// RC TEST LINE//////////////////////////////////
 
+    public void stack()
+    {
+        //장애물
+        if (data.endsWith("e")) {
+            rc_mode_change = 1;
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+            rc_override.chan1_raw = 1500; // 중앙
+            rc_override.chan2_raw = 1440; //전진
+        } else if (data.endsWith("t")) {
+            //Toast.makeText(getApplicationContext(), "오른쪽", Toast.LENGTH_SHORT).show();
+            rc_mode_change= 2;
+            //rc_override.chan1_raw = 1440;// 왼쪽비행
+            rc_override.chan2_raw = 1500;
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        } else if (data.endsWith("l")) {
+            //Toast.makeText(getApplicationContext(), "왼쪽", Toast.LENGTH_SHORT).show();
+            rc_mode_change= 3;
+            //rc_override.chan1_raw = 1560;//오른쪽비행
+            rc_override.chan2_raw = 1500;
+
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        }
+
+        //장애물
+        /*else if (data.endsWith("l")) {
+            //왼쪽
+            rc_mode_change= 3;
+            rc_override.chan1_raw = 1420;
+            rc_override.chan2_raw = 1500;
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        }
+        else if (data.endsWith("t")) {
+            //오른쪽비행
+            rc_mode_change= 3;
+            rc_override.chan1_raw = 1580;
+            rc_override.chan2_raw = 1500;
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        } if (data.endsWith("e")) {
+            //전진
+            rc_mode_change = 1;
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+            rc_override.chan1_raw = 1500;
+            rc_override.chan2_raw = 1560;
+    }*/
+
+        else {
+            //Toast.makeText(getApplicationContext(), "안되잖아?", Toast.LENGTH_SHORT).show();
+            rc_mode_change=1;
+            rc_override.chan4_raw = 1500;
+            //rc_override.chan1_raw = 1500;
+            //rc_override.chan2_raw = 1500;
+
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        }
+    }
+
     //yaw_rc_test
     public void test(View view) {
-        Button btn = (Button) findViewById(R.id.rc_test_btn);
+        /*Button btn = (Button) findViewById(R.id.rc_test_btn);
         if (ch2 == true) {
             ch2 = false;
             btn.setText("move");
@@ -831,7 +1025,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
             ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
             Toast.makeText(getApplicationContext(), "이동중~~~~.", Toast.LENGTH_SHORT).show();
-        }
+        }*/
 
     }
     public void test2(View view) {
@@ -854,6 +1048,59 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     }
 
+    //드론 회전각도 및 방향 설정
+    public void angle_select(View view) {
+
+        /*final EditText edittext = new EditText(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("각 설정");
+        builder.setMessage("각:");
+        builder.setView(edittext);
+        builder.setPositiveButton("저장",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        String d = edittext.getText().toString();
+                        angle = Float.parseFloat(d);
+                        Toast.makeText(getApplicationContext(), edittext.getText().toString(), Toast.LENGTH_LONG).show();
+                        Log.d("test", "각 : " + dis);
+                    }
+                });
+        builder.setNegativeButton("취소",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+        builder.show();*/
+    }
+
+    public void cw_select(View view) {
+
+        /*final EditText edittext = new EditText(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
+
+
+        builder.setTitle("방향 설정");
+        builder.setMessage("방향:");
+        builder.setView(edittext);
+        builder.setPositiveButton("저장",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        String d = edittext.getText().toString();
+                        cw = Float.parseFloat(d);
+                        Toast.makeText(getApplicationContext(), edittext.getText().toString(), Toast.LENGTH_LONG).show();
+                    }
+                });
+        builder.setNegativeButton("취소",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+        builder.show();*/
+    }
     /////////////가이드모드/////////////////////////////////////////////////////
 
     protected void Map_Click() {
@@ -873,8 +1120,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     }
                 });
 
-                LatLong here = new LatLong(coord.latitude, coord.longitude);
-                ControlApi.getApi(this.drone).goTo(here, true, new SimpleCommandListener() {
+                LatLong destination = new LatLong(coord.latitude, coord.longitude);
+                ControlApi.getApi(this.drone).goTo(destination, true, new SimpleCommandListener() {
                     public void onSuccess() {
                         alertUser("다왔다...");
                     }
@@ -894,7 +1141,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     OverlayImage image1 = OverlayImage.fromResource(R.drawable.map_pin_40px);
 
                     la1 = coord;
-                    your_name = true;
+                    Interval_bool = true;
 
                     A_marker.setPosition(la1);
                     A_marker.setMap(nMap);
@@ -902,13 +1149,15 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     A_marker.setWidth(70);
                     A_marker.setHeight(70);
                     marker_count = false;
+
+                    //기존에찍혀잇던 마커및 라인 제거
                     Mapclic2_polyline.setMap(null);
                     B_marker.setMap(null);
                     C_marker.setMap(null);
                     D_marker.setMap(null);
                     Map_point.clear();
                     map_marker.setMap(null);
-                    mis.clear();
+                    IntervalMission.clear();
                     // map_marker.setMap(nMap);
 
                 } else if (marker_count == false) {
@@ -921,6 +1170,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     B_marker.setWidth(70);
                     B_marker.setHeight(70);
                     marker_count = true;
+
+                    //두마커사이 거리 계산 GoogleMap Api 오픈소스사용
                     double distance = discomputeAngleBetween(la1, la2) * 6371009.0D;
                     Toast.makeText(this, (int) distance + "m", Toast.LENGTH_LONG).show();
 
@@ -928,17 +1179,17 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     LatLong point2 = change_LatLong(la1);
 
                     for (int i = 0; i <= dis; i++) {
-                        if (i % rksrur == 0) {
+                        if (i % Interval == 0) {
                             LatLng a = change_LatLng(MathUtils.newCoordFromBearingAndDistance(point2, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i));
                             LatLng b = change_LatLng(MathUtils.newCoordFromBearingAndDistance(point1, MathUtils.getHeadingFromCoordinates(point2, point1) + 90, i));
-                            if (your_name == true) {
+                            if (Interval_bool == true) {
                                 Map_point.add(a);
                                 Map_point.add(b);
-                                your_name = false;
-                            } else if (your_name == false) {
+                                Interval_bool = false;
+                            } else if (Interval_bool == false) {
                                 Map_point.add(b);
                                 Map_point.add(a);
-                                your_name = true;
+                                Interval_bool = true;
                             }
                         }
                         if (i == dis) {
@@ -963,17 +1214,15 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                         Waypoint way = new Waypoint();
                         way.setDelay(1);
                         way.setCoordinate(new LatLongAlt(Map_point.get(i).latitude, Map_point.get(i).longitude, droneAltitude.getRelativeAltitude()));
-                        mis.addMissionItem(way);
+                        IntervalMission.addMissionItem(way);
                     }
-
-
                     Toast.makeText(this, MathUtils.getHeadingFromCoordinates(point2, point1) + "도", Toast.LENGTH_LONG).show();
 
                     Mapclic2_polyline.setCoords(Map_point);
                     Mapclic2_polyline.setColor(Color.WHITE);
                     Mapclic2_polyline.setMap(nMap);
                 }
-                mission();
+                //mission();
             }
 
         });
@@ -985,9 +1234,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         BtnSendMission.setText("임무 시작");
     }
 
-    private void mission() {
+    /*private void mission() {
         if (MyMissionState == My_Type.MISSION_WAIT) {
-            MissionApi.getApi(this.drone).setMission(mis, true);
+            MissionApi.getApi(this.drone).setMission(IntervalMission, true);
         } else if (MyMissionState == My_Type.MISSION_START) {
             VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_AUTO, new SimpleCommandListener() {
                 public void onSuccess() {
@@ -1001,13 +1250,14 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
             });
         }
-    }
-   /* public void missionbtn(View view) {
+    }*/
+    public void missionbtn(View view) {
         Button mission = (Button) findViewById(R.id.mission_sent_btn);
 
         if (count1 == 0) {
-            MissionApi.getApi(this.drone).setMission(mis, true);
+            MissionApi.getApi(this.drone).setMission(IntervalMission, true);
             mission.setText("임무시작");
+            //mis_set();
             count1 = 1;
         } else if (count1 == 1) {
             VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_AUTO, new SimpleCommandListener() {
@@ -1016,6 +1266,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
             });
             mission.setText("임무중지");
+            //mis_start();
             count1 = 2;
         } else if (count1 == 2) {
             VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_LOITER, new SimpleCommandListener() {
@@ -1023,10 +1274,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     alertUser("미션중지");
                 }
             });
+            // mis_stop();
             mission.setText("임무전송");
             count1 = 0;
         }
-    }*/
+    }
+
 
     //간격감시 거리, 간격 설정
     public void select1(View view) {
@@ -1066,9 +1319,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         String d = edittext.getText().toString();
-                        rksrur = Integer.parseInt(d);
+                        Interval = Integer.parseInt(d);
                         Toast.makeText(getApplicationContext(), edittext.getText().toString(), Toast.LENGTH_LONG).show();
-                        Log.d("test", "거리값 : " + rksrur);
+                        Log.d("test", "거리값 : " + Interval);
                     }
                 });
         builder.setNegativeButton("취소",
@@ -1080,60 +1333,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         builder.show();
     }
 
-    //드론 회전각도 및 방향 설정
-    public void angle_select(View view) {
 
-        final EditText edittext = new EditText(this);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
-        builder.setTitle("각 설정");
-        builder.setMessage("각:");
-        builder.setView(edittext);
-        builder.setPositiveButton("저장",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        String d = edittext.getText().toString();
-                        angle = Float.parseFloat(d);
-                        Toast.makeText(getApplicationContext(), edittext.getText().toString(), Toast.LENGTH_LONG).show();
-                        Log.d("test", "각 : " + dis);
-                    }
-                });
-        builder.setNegativeButton("취소",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                });
-        builder.show();
-    }
-
-    public void cw_select(View view) {
-
-        final EditText edittext = new EditText(this);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        AlertDialog.Builder builder2 = new AlertDialog.Builder(this);
-
-
-        builder.setTitle("방향 설정");
-        builder.setMessage("방향:");
-        builder.setView(edittext);
-        builder.setPositiveButton("저장",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        String d = edittext.getText().toString();
-                        cw = Float.parseFloat(d);
-                        Toast.makeText(getApplicationContext(), edittext.getText().toString(), Toast.LENGTH_LONG).show();
-                        Log.d("test", "방향 : " + rksrur);
-                    }
-                });
-        builder.setNegativeButton("취소",
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                });
-        builder.show();
-    }
 
 
     //LatLong, LatLng 변환함수
@@ -1148,6 +1348,209 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         LatLng new_Lng = new LatLng(Lat, Long);
         return new_Lng;
     }
+
+    ///조이스틱/////
+    public void joystick(){
+
+        layout_Leftjoystick = (RelativeLayout)findViewById(R.id.layout_joystick);
+        layout_Rightjoystick = (RelativeLayout)findViewById(R.id.layout_joystick2);
+
+        jstickLeft = new JoyStickClass(getApplicationContext()
+                , layout_Leftjoystick, R.drawable.image_button);
+        jstickLeft.setStickSize(150, 150);
+        jstickLeft.setLayoutSize(500, 500);
+        jstickLeft.setLayoutAlpha(150);
+        jstickLeft.setStickAlpha(100);
+        jstickLeft.setOffset(90);
+        jstickLeft.setMinimumDistance(20);
+
+        jstickRight = new JoyStickClass(getApplicationContext()
+                , layout_Rightjoystick, R.drawable.image_button);
+        jstickRight.setStickSize(150, 150);
+        jstickRight.setLayoutSize(500, 500);
+        jstickRight.setLayoutAlpha(150);
+        jstickRight.setStickAlpha(100);
+        jstickRight.setOffset(90);
+        jstickRight.setMinimumDistance(20);
+
+
+        //조이스틱 왼쪽 컨트롤러
+        layout_Leftjoystick.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View arg0, MotionEvent arg1) {
+                jstickLeft.drawStick(arg1);
+                if(arg1.getAction() == MotionEvent.ACTION_DOWN
+                        || arg1.getAction() == MotionEvent.ACTION_MOVE) {
+                    int Xpoint = jstickLeft.getX();
+                    int Ypoint = jstickLeft.getY();
+                    if(Xpoint<0){Xpoint= -Xpoint;}
+                    else if(Xpoint>200){Xpoint=200;}
+                    if(Ypoint<0){Ypoint= -Ypoint;}
+                    else if(Ypoint>200){Ypoint=200;}
+
+                    double XmotorValue = Xpoint*speedYaw;
+                    double YmotorValue = Ypoint*speedUpDown;
+
+                    if(jstickLeft.getDistance()>200) { float distance = 200; }
+
+                    int direction = jstickLeft.get8Direction();
+                    if(direction == JoyStickClass.STICK_UP) {
+                        rc_override.chan3_raw = 1500 + (int)YmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("상승");
+                    } else if(direction == JoyStickClass.STICK_UPRIGHT) {
+                        rc_override.chan3_raw = 1500 + (int)YmotorValue;
+                        rc_override.chan4_raw = 1500 + (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+                    } else if(direction == JoyStickClass.STICK_RIGHT) {
+                        rc_override.chan4_raw = 1500 + (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("시계회전");
+                    } else if(direction == JoyStickClass.STICK_DOWNRIGHT) {
+                        rc_override.chan3_raw = 1500 - (int)YmotorValue;
+                        rc_override.chan4_raw = 1500 + (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+                    } else if(direction == JoyStickClass.STICK_DOWN) {
+                        rc_override.chan3_raw = 1500 - (int)YmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("하강");
+                    } else if(direction == JoyStickClass.STICK_DOWNLEFT) {
+                        rc_override.chan3_raw = 1500 - (int)YmotorValue;
+                        rc_override.chan4_raw = 1500 - (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+                    } else if(direction == JoyStickClass.STICK_LEFT) {
+                        rc_override.chan4_raw = 1500 - (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("반시계회전");
+                    } else if(direction == JoyStickClass.STICK_UPLEFT) {
+                        rc_override.chan3_raw = 1500 + (int)YmotorValue;
+                        rc_override.chan4_raw = 1500 - (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+                    } else if(direction == JoyStickClass.STICK_NONE) {
+                        rc_override.chan1_raw = 1500;
+                        rc_override.chan2_raw = 1500;
+                        rc_override.chan3_raw = 1500;
+                        rc_override.chan4_raw = 1500;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("정지");
+                    }
+                } else if(arg1.getAction() == MotionEvent.ACTION_UP) {
+                    rc_override.chan1_raw = 1500;
+                    rc_override.chan2_raw = 1500;
+                    rc_override.chan3_raw = 1500;
+                    rc_override.chan4_raw = 1500;
+                    ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                    alertUser("정지");
+                }
+                return true;
+            }
+        });
+
+        //조이스틱 오른쪽 컨트롤러
+        layout_Rightjoystick.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View arg0, MotionEvent arg1) {
+                jstickRight.drawStick(arg1);
+                if(arg1.getAction() == MotionEvent.ACTION_DOWN
+                        || arg1.getAction() == MotionEvent.ACTION_MOVE) {
+                    int Xpoint = jstickRight.getX();
+                    int Ypoint = jstickRight.getY();
+                    if(Xpoint < 0){Xpoint = - Xpoint;}
+                    else if(Xpoint > 200){Xpoint = 200;}
+                    if(Ypoint < 0){Ypoint = - Ypoint;}
+                    else if(Ypoint > 200){Ypoint = 200;}
+
+                    double XmotorValue = Xpoint * speedMove;
+                    double YmotorValue = Ypoint * speedMove;
+
+                    int direction = jstickRight.get8Direction();
+                    if(direction == JoyStickClass.STICK_UP) {
+                        rc_override.chan2_raw = 1500 - (int)YmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("전진");
+                    } else if(direction == JoyStickClass.STICK_UPRIGHT) {
+                        rc_override.chan2_raw = 1500 - (int)YmotorValue;
+                        rc_override.chan1_raw = 1500 + (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+                    } else if(direction == JoyStickClass.STICK_RIGHT) {
+                        rc_override.chan1_raw = 1500 + (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("우회전");
+
+                    } else if(direction == JoyStickClass.STICK_DOWNRIGHT) {
+                        rc_override.chan2_raw = 1500 + (int)YmotorValue;
+                        rc_override.chan1_raw = 1500 + (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+                    } else if(direction == JoyStickClass.STICK_DOWN) {
+                        rc_override.chan2_raw = 1500 + (int)YmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("후진");
+                    } else if(direction == JoyStickClass.STICK_DOWNLEFT) {
+                        rc_override.chan2_raw = 1500 + (int)YmotorValue;
+                        rc_override.chan1_raw = 1500 - (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+                    } else if(direction == JoyStickClass.STICK_LEFT) {
+                        rc_override.chan1_raw = 1500 - (int)XmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("좌회전");
+
+                    } else if(direction == JoyStickClass.STICK_UPLEFT) {
+                        rc_override.chan1_raw = 1500 - (int)XmotorValue;
+                        rc_override.chan2_raw = 1500 - (int)YmotorValue;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+
+
+                    } else if(direction == JoyStickClass.STICK_NONE) {
+                        rc_override.chan1_raw = 1500;
+                        rc_override.chan2_raw = 1500;
+                        rc_override.chan3_raw = 1500;
+                        rc_override.chan4_raw = 1500;
+                        ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                        alertUser("정지");
+
+                    }
+                } else if(arg1.getAction() == MotionEvent.ACTION_UP) {
+                    rc_override.chan1_raw = 1500;
+                    rc_override.chan2_raw = 1500;
+                    rc_override.chan3_raw = 1500;
+                    rc_override.chan4_raw = 1500;
+                    ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+                    alertUser("정지");
+
+                }
+                return true;
+            }
+        });
+
+    }
+
+    public void onCameraModeChange(View view){
+        final Button btnconnect= (Button)findViewById(R.id.btnConnect);
+
+
+        final RelativeLayout videocontrolview= findViewById(R.id.VideoControlView);
+        if(cameraType==0){
+
+            videocontrolview.setVisibility(View.VISIBLE);
+            cameraType=1;
+        }
+        else if(cameraType==1)
+        {
+            videocontrolview.setVisibility(View.INVISIBLE);
+            cameraType=0;
+        }
+
+    }
+
+
+
+    ////소켓통신////
+
 
 
     /////////////////건든적없는코드/////////////////////////////////
@@ -1171,7 +1574,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
         }
     }
-
+    // DroneKit-Android Listener
+    // ==========================================================
     @Override
     public void onTowerConnected() {
         alertUser("DroneKit-Android Connected");
