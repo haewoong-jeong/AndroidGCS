@@ -411,6 +411,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                                 Log.d("datav","데이터 : " + data);
                                 stack();
 
+
                                 //Log.d("datav2","데이터 : " + rc_mode_change);
                                 //rc_socket();
 
@@ -935,56 +936,34 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     public void stack()
     {
+        //객체
+        if (data.endsWith("E")) {
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+            rc_override.chan4_raw = 1500; // 중앙
+
+        } else if (data.endsWith("T")) {
+            rc_override.chan4_raw = 1540; //시계방향
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        } else if (data.endsWith("L")) {
+            rc_override.chan4_raw = 1470; //반시계방향
+            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
+        }
         //장애물
-        if (data.endsWith("e")) {
-            rc_mode_change = 1;
+        else if (data.endsWith("e")) {
             ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
             rc_override.chan1_raw = 1500; // 중앙
             rc_override.chan2_raw = 1440; //전진
         } else if (data.endsWith("t")) {
-            //Toast.makeText(getApplicationContext(), "오른쪽", Toast.LENGTH_SHORT).show();
-            rc_mode_change= 2;
             //rc_override.chan1_raw = 1440;// 왼쪽비행
             rc_override.chan2_raw = 1500;
             ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
         } else if (data.endsWith("l")) {
-            //Toast.makeText(getApplicationContext(), "왼쪽", Toast.LENGTH_SHORT).show();
-            rc_mode_change= 3;
             //rc_override.chan1_raw = 1560;//오른쪽비행
             rc_override.chan2_raw = 1500;
 
             ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
         }
-
-        //장애물
-        /*else if (data.endsWith("l")) {
-            //왼쪽
-            rc_mode_change= 3;
-            rc_override.chan1_raw = 1420;
-            rc_override.chan2_raw = 1500;
-            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
-        }
-        else if (data.endsWith("t")) {
-            //오른쪽비행
-            rc_mode_change= 3;
-            rc_override.chan1_raw = 1580;
-            rc_override.chan2_raw = 1500;
-            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
-        } if (data.endsWith("e")) {
-            //전진
-            rc_mode_change = 1;
-            ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
-            rc_override.chan1_raw = 1500;
-            rc_override.chan2_raw = 1560;
-    }*/
-
         else {
-            //Toast.makeText(getApplicationContext(), "안되잖아?", Toast.LENGTH_SHORT).show();
-            rc_mode_change=1;
-            rc_override.chan4_raw = 1500;
-            //rc_override.chan1_raw = 1500;
-            //rc_override.chan2_raw = 1500;
-
             ExperimentalApi.getApi(drone).sendMavlinkMessage(new MavlinkMessageWrapper(rc_override));
         }
     }
